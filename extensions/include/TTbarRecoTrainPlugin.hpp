@@ -1,8 +1,8 @@
 /**
- * \file THRecoTrainPlugin.hpp
+ * \file TTbarRecoTrainPlugin.hpp
  * \author Andrey Popov
  * 
- * Defines a class to create tuples to train a BNN for thq MVA reconstruction.
+ * Defines a class to create tuples to train a BNN for ttbar MVA reconstruction.
  */
 
 #pragma once
@@ -28,58 +28,59 @@
  */
 struct Interpretation
 {
-    /// Index of b-jet from the top-quark
-    unsigned bTop;
+    /// Index of b-jet from the top-quark that decays semi-leptonically
+    unsigned bTopLep;
     
-    /// Index of recoil light-flavour jet
-    unsigned qRecoil;
+    /// Index of b-jet from the top-quark that decays hadronically
+    unsigned bTopHad;
     
-    /// Index of b-jets from the higgs decay
-    unsigned b1Higgs, b2Higgs;
+    /// Indices of light-flavour jets from hadronically decaying top-quark
+    unsigned q1TopHad, q2TopHad;
     
     /// Distanse to generator-level configuration
     double distance;
     
     /**
-     * \brief Four-momentum of reconstructed top-quark
+     * \brief Four-momenta of reconstructed top-quarks
      * 
      * It is not needed to define an interpretation, but it is saved for computational efficiency.
      */
-    TLorentzVector p4RecoTop;
+    TLorentzVector p4RecoTopLep, p4RecoTopHad;
     
     /**
-     * \brief Four-momentum of reconstructed Higgs boson
+     * \brief Four-momentum of reconstructed W boson from hadronically decaying top-quark
      * 
      * It is not needed to define an interpretation, but it is saved for computational efficiency.
      */
-    TLorentzVector p4RecoHiggs;
+    TLorentzVector p4RecoWHad;
 };
 
 
 /**
- * \class THRecoTrainPlugin
- * \brief Creates tuples to train a BNN for thq MVA reconstruction
+ * \class TTbarRecoTrainPlugin
+ * \brief Creates tuples to train a BNN for ttbar MVA reconstruction
  * 
- * There are four energetic jets in the final state of thq process. The class considers all the ways
- * to choose four jets out of all jets in an event (combination of PECReader::GetJets() and
+ * There are four energetic jets in the final state of semileptonic ttbar. The class considers all
+ * the ways to choose four jets out of all jets in an event (combination of PECReader::GetJets() and
  * PECReader::GetAdditionalJets()). All the possible associations of these four jets to parent
- * objects (top-quark, Higgs boson, or recoil quark) are constructed. Such combinatorics defines a
- * set of interpretations of an event. For each interpretations a distance between reconstructed and
- * generator-level top-quark, Higgs boson, and recoil quark is calculated (metrics $\Delta R \oplus
- * \Delta p_T^{rel}$ is used). The interpretations are ordered in the distance (in increasing
- * order). Finally, a set of reconstruction-level observables is calculated for each interpretation
- * and stored in a ROOT tree (along with information about the distance). The user can also
- * configure the plugin to store only one interpretation per event (see description of
- * THRecoTrainPlugin::pruned data member for details).
+ * objects (two top-quarks) are constructed. Such combinatorics defines a set of interpretations of
+ * an event. For each interpretations a distance between reconstructed and generator-level
+ * top-quarks and light-flavour jets from hadronically decaying top-quark is calculated (metrics
+ * $\Delta R \oplus \Delta p_T^{rel}$ is used). The interpretations are ordered in the distance (in
+ * increasing order). Finally, a set of reconstruction-level observables is calculated for each
+ * interpretation and stored in a ROOT tree (along with information about the distance). The user
+ * can also configure the plugin to store only one interpretation per event (see description of
+ * TTbarRecoTrainPlugin::pruned data member for details).
  * 
- * Details are available a talk by Andrey Popov in [1].
- * [1] https://indico.cern.ch/conferenceDisplay.py?confId=251808 (password is "tHmeeting")
+ * Some details are available a talk by Andrey Popov in [1]; however, the procedure has evolved a
+ * bit since that time.
+ * [1] https://indico.cern.ch/conferenceDisplay.py?confId=250153 (password is "tHmeeting")
  */
-class THRecoTrainPlugin: public Plugin
+class TTbarRecoTrainPlugin: public Plugin
 {
     public:
         /// Constructor
-        THRecoTrainPlugin(std::string const &outDirectory, BTagger const &bTagger,
+        TTbarRecoTrainPlugin(std::string const &outDirectory, BTagger const &bTagger,
          bool pruned = false);
 
     public:
@@ -114,7 +115,7 @@ class THRecoTrainPlugin: public Plugin
     private:
         /// Calculates reconstruction-level observables for a given event interpretation
         void CalculateRecoVars(Interpretation const &interpr, Lepton const &lepton,
-         TLorentzVector const &p4RecoW, double Ht);
+         TLorentzVector const &p4RecoWLep, double Ht);
     
     private:
         /// Pointer to PECReaderPlugin
@@ -158,39 +159,43 @@ class THRecoTrainPlugin: public Plugin
         // Output buffers
         ULong64_t eventNumber, runNumber, lumiSection;
         
+        Float_t NJets30, NTags30;
+        //^ Needed to allow the same tuples for 3t and 4t bins
+        
         Int_t InterpretationRank;
         //^ 0 for the best interprothesis, 2 for the worst one, 1 for the rest of them. The branch
         //is used mostly to demarcate interpretations of different events
         
         Float_t Distance;
         
-        Float_t MassTop, PtTop, EtaTop;
-        Float_t MassHiggs, PtHiggs, EtaHiggs;
-        Float_t PtLJet, EtaLJet;
+        Float_t MassTopLep, PtTopLep, EtaTopLep;
+        Float_t MassTopHad, PtTopHad, EtaTopHad;
+        Float_t MassWHad, PtWHad, EtaWHad;
         
-        Float_t DeltaRTopHiggs;
-        Float_t DeltaRTopW, DeltaRBJetTopW;
-        Float_t DeltaEtaLepTop;
-        Float_t DeltaRBJetsHiggs;
+        Float_t DeltaRTopTop;
+        Float_t DeltaRTopLepWLep, DeltaRTopHadWHad, DeltaRBJetTopLepWLep, DeltaRBJetTopHadWHad;
         
-        Float_t CosLepTopW;
-        //^ Angle between 3-momenta of the lepton and the top-quark in the rest frame of the
-        //daughter W-boson. Sign of the cosine is inverted w.r.t. to this description because this
-        //is the common definition
+        Float_t DeltaRLightJets;
+        
+        Float_t MinEtaTop, MaxEtaTop;
+        Float_t DEtaTopTop;
+        
+        Float_t CosLepTopLepWLep;
+        //^ Angle between 3-momenta of the lepton and the top-quark decaying leptonically in the rest
+        //frame of the daughter W-boson
         
         Float_t RelHt;
         //^ Sum of pt(t) and pt(h) devided by the total Ht of the event
         
-        Float_t MinPtBJet;
+        Float_t MinPtBJet, MinPtLightJet;
         
-        Float_t PassBTagTop, PassBTagLJet;
-        //^ Whether the psesumable b-jet from top-quark decay and the light-flavoured recoil jets
-        //are b-tagged
+        Float_t PassBTagTopLep, PassBTagTopHad;
+        //^ Whether presumable b-jets from decays of each top-quark are b-tagged
         
-        Float_t NPassBTagHiggs;
-        //^ Number of presumable b-jets from Higgs boson decay that pass b-tag
+        Float_t NLightPassBTagTopHad;
+        //^ Number of presumably light-flavour jets from hadronic decay of a top-quark that pass b-tag
         
-        Float_t CSVBJetTop, CSVLJet, MinCSVBJetsHiggs;
+        Float_t CSVBJetTopLep, CSVBJetTopHad, MaxCSVLightJetsTopHad;
         
         Float_t weight;
 };
