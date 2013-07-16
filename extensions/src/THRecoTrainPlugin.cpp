@@ -60,6 +60,10 @@ void THRecoTrainPlugin::BeginRun(Dataset const &dataset)
     
     
     // Assign branch addresses
+    tree->Branch("run", &runNumber);
+    tree->Branch("event", &eventNumber);
+    tree->Branch("lumiSection", &lumiSection);
+    
     tree->Branch("InterpretationRank", &InterpretationRank);
     tree->Branch("Distance", &Distance);
     
@@ -172,7 +176,13 @@ bool THRecoTrainPlugin::ProcessEvent()
     
     
     // Precalculate variables that do not depend on the choice of event interpretation
+    auto const &eventID = (*reader)->GetEventID();
+    runNumber = eventID.Run();
+    eventNumber = eventID.Event();
+    lumiSection = eventID.LumiBlock();
+    
     weight = (*reader)->GetCentralWeight();
+    
     double Ht = lepton.Pt() + met.Pt();
     
     for (auto const &j: allJets)
