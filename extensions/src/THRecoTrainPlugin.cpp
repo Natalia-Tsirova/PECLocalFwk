@@ -54,10 +54,6 @@ void THRecoTrainPlugin::BeginRun(Dataset const &dataset)
     
     
     // Assign branch addresses
-    tree->Branch("run", &runNumber);
-    tree->Branch("event", &eventNumber);
-    tree->Branch("lumiSection", &lumiSection);
-    
     tree->Branch("InterpretationRank", &InterpretationRank);
     tree->Branch("Distance", &Distance);
     

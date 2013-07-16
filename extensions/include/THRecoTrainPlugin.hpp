@@ -132,8 +132,6 @@ class THRecoTrainPlugin: public Plugin
         TTree *tree;
         
         // Output buffers
-        ULong64_t eventNumber, runNumber, lumiSection;
-        
         Int_t InterpretationRank;
         //^ 0 for the best interprothesis, 2 for the worst one, 1 for the rest of them. The branch
         //is used mostly to demarcate interpretations of different events
