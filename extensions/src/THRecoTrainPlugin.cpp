@@ -53,7 +53,7 @@ void THRecoTrainPlugin::BeginRun(Dataset const &dataset)
      "recreate");
     
     // Create the tree
-    tree = new TTree("Vars", "Basic kinematical variables");
+    tree = new TTree("Vars", "Observables for thq MVA reconstruction");
     
     // End of critical block
     ROOTLock::Unlock();
