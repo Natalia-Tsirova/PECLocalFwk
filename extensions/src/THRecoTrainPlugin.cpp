@@ -11,9 +11,10 @@
 using namespace std;
 
 
-THRecoTrainPlugin::THRecoTrainPlugin(string const &outDirectory_, BTagger const &bTagger_):
+THRecoTrainPlugin::THRecoTrainPlugin(string const &outDirectory_, BTagger const &bTagger_,
+ bool pruned_ /*= true*/):
     Plugin("THRecoTrain"),
-    bTagger(bTagger_), outDirectory(outDirectory_)
+    bTagger(bTagger_), outDirectory(outDirectory_), pruned(pruned_)
 {
     // Make sure the directory path ends with a slash
     if (outDirectory.back() != '/')
@@ -24,12 +25,17 @@ THRecoTrainPlugin::THRecoTrainPlugin(string const &outDirectory_, BTagger const 
     
     if (stat(outDirectory.c_str(), &dirStat) != 0)  // the directory does not exist
         mkdir(outDirectory.c_str(), 0755);
+    
+    
+    // Initialise random-number generator if needed
+    if (pruned)
+        rGen.reset(new TRandom3(0));
 }
 
 
 Plugin *THRecoTrainPlugin::Clone() const
 {
-    return new THRecoTrainPlugin(outDirectory, bTagger);
+    return new THRecoTrainPlugin(outDirectory, bTagger, pruned);
 }
 
 
@@ -165,7 +171,8 @@ bool THRecoTrainPlugin::ProcessEvent()
     auto const &met = (*reader)->GetMET();
     
     
-    // Precalculate auxiliary variables that do not depend on the choice of event interpretation
+    // Precalculate variables that do not depend on the choice of event interpretation
+    weight = (*reader)->GetCentralWeight();
     double Ht = lepton.Pt() + met.Pt();
     
     for (auto const &j: allJets)
@@ -261,75 +268,103 @@ bool THRecoTrainPlugin::ProcessEvent()
      [](Interpretation const &lh, Interpretation const &rh){return (rh.distance > lh.distance);});
     
     
-    // Calculate input variables for each interpretation and store them
-    for (unsigned i = 0; i < interpretations.size(); ++i)
+    // Calculate input variables
+    if (pruned)  // only one interpretation will be saved
     {
-        Interpretation const &interpr = interpretations.at(i);
+        unsigned interprIndex;
         
-        if (i == 0)  // the best interpretation
+        if (rGen->Integer(2) == 0)  // 50% chance to save the best interpretation has been taken
+        {
             InterpretationRank = 0;
-        else if (i == interpretations.size() - 1)  // the worst interpretation
-            InterpretationRank = 2;
-        else
-            InterpretationRank = 1;
+            interprIndex = 0;
+        }
+        else  // 50% chance to take a background interpretation has been taken
+        {
+            // Choose one non-best interpretation randomly
+            interprIndex = 1 + rGen->Integer(interpretations.size() - 1);
+            
+            if (interprIndex == interpretations.size() - 1)  // the worst interpretation
+                InterpretationRank = 2;
+            else
+                InterpretationRank = 1;
+        }
         
-        Distance = interpr.distance;
+        Distance = interpretations.at(interprIndex).distance;
+        CalculateRecoVars(interpretations.at(interprIndex), lepton, p4RecoW, Ht);
         
-        MassTop = interpr.p4RecoTop.M();
-        PtTop = interpr.p4RecoTop.Pt();
-        EtaTop = interpr.p4RecoTop.Eta();
-        
-        MassHiggs = interpr.p4RecoHiggs.M();
-        PtHiggs = interpr.p4RecoHiggs.Pt();
-        EtaHiggs = interpr.p4RecoHiggs.Eta();
-        
-        PtLJet = allJets.at(interpr.qRecoil).Pt();
-        EtaLJet = allJets.at(interpr.qRecoil).Eta();
-        
-        DeltaRTopHiggs = interpr.p4RecoTop.DeltaR(interpr.p4RecoHiggs);
-        
-        DeltaRTopW = interpr.p4RecoTop.DeltaR(p4RecoW);
-        DeltaRBJetTopW = p4RecoW.DeltaR(allJets.at(interpr.bTop).P4());
-        
-        DeltaEtaLepTop = fabs(lepton.Eta() - EtaTop);
-        
-        DeltaRBJetsHiggs =
-         allJets.at(interpr.b1Higgs).P4().DeltaR(allJets.at(interpr.b2Higgs).P4());
-        
-        RelHt = (interpr.p4RecoTop.Pt() + interpr.p4RecoHiggs.Pt()) / Ht;
-        
-        MinPtBJet = min({allJets.at(interpr.bTop).Pt(), allJets.at(interpr.b1Higgs).Pt(),
-         allJets.at(interpr.b2Higgs).Pt()});
-        
-        
-        PassBTagTop = (bTagger(allJets.at(interpr.bTop))) ? 1. : 0.;
-        PassBTagLJet = (bTagger(allJets.at(interpr.qRecoil))) ? 1. : 0.;
-        NPassBTagHiggs = 0. + (bTagger(allJets.at(interpr.b1Higgs))) +
-         (bTagger(allJets.at(interpr.b2Higgs)));
-        
-        CSVBJetTop = max(0., allJets.at(interpr.bTop).CSV());
-        CSVLJet = max(0., allJets.at(interpr.qRecoil).CSV());
-        MinCSVBJetsHiggs = max(0.,
-         min(allJets.at(interpr.b1Higgs).CSV(), allJets.at(interpr.b2Higgs).CSV()));
-        
-        
-        TLorentzVector p4Lep(lepton.P4());
-        TLorentzVector p4Top(interpr.p4RecoTop);
-        
-        TVector3 b = p4RecoW.BoostVector();
-        p4Lep.Boost(-b);
-        p4Top.Boost(-b);
-        
-        CosLepTopW = -p4Lep.Vect().Dot(p4Top.Vect()) / p4Lep.Vect().Mag() /
-         p4Top.Vect().Mag();
-        
-        weight = (*reader)->GetCentralWeight();
-        
-        
-        // Fill the tree
         tree->Fill();
+    }
+    else  // save all the interpretations
+    {
+        for (unsigned interprIndex = 0; interprIndex < interpretations.size(); ++interprIndex)
+        {
+            if (interprIndex == 0)  // the best interpretation
+                InterpretationRank = 0;
+            else if (interprIndex == interpretations.size() - 1)  // the worst interpretation
+                InterpretationRank = 2;
+            else
+                InterpretationRank = 1;
+            
+            Distance = interpretations.at(interprIndex).distance;
+            CalculateRecoVars(interpretations.at(interprIndex), lepton, p4RecoW, Ht);
+            
+            tree->Fill();
+        }
     }
     
     
     return true;
+}
+
+
+void THRecoTrainPlugin::CalculateRecoVars(Interpretation const &interpr, Lepton const &lepton,
+ TLorentzVector const &p4RecoW, double Ht)
+{
+    MassTop = interpr.p4RecoTop.M();
+    PtTop = interpr.p4RecoTop.Pt();
+    EtaTop = interpr.p4RecoTop.Eta();
+    
+    MassHiggs = interpr.p4RecoHiggs.M();
+    PtHiggs = interpr.p4RecoHiggs.Pt();
+    EtaHiggs = interpr.p4RecoHiggs.Eta();
+    
+    PtLJet = allJets.at(interpr.qRecoil).Pt();
+    EtaLJet = allJets.at(interpr.qRecoil).Eta();
+    
+    DeltaRTopHiggs = interpr.p4RecoTop.DeltaR(interpr.p4RecoHiggs);
+    
+    DeltaRTopW = interpr.p4RecoTop.DeltaR(p4RecoW);
+    DeltaRBJetTopW = p4RecoW.DeltaR(allJets.at(interpr.bTop).P4());
+    
+    DeltaEtaLepTop = fabs(lepton.Eta() - EtaTop);
+    
+    DeltaRBJetsHiggs =
+     allJets.at(interpr.b1Higgs).P4().DeltaR(allJets.at(interpr.b2Higgs).P4());
+    
+    RelHt = (interpr.p4RecoTop.Pt() + interpr.p4RecoHiggs.Pt()) / Ht;
+    
+    MinPtBJet = min({allJets.at(interpr.bTop).Pt(), allJets.at(interpr.b1Higgs).Pt(),
+     allJets.at(interpr.b2Higgs).Pt()});
+    
+    
+    PassBTagTop = (bTagger(allJets.at(interpr.bTop))) ? 1. : 0.;
+    PassBTagLJet = (bTagger(allJets.at(interpr.qRecoil))) ? 1. : 0.;
+    NPassBTagHiggs = 0. + (bTagger(allJets.at(interpr.b1Higgs))) +
+     (bTagger(allJets.at(interpr.b2Higgs)));
+    
+    CSVBJetTop = max(0., allJets.at(interpr.bTop).CSV());
+    CSVLJet = max(0., allJets.at(interpr.qRecoil).CSV());
+    MinCSVBJetsHiggs = max(0.,
+     min(allJets.at(interpr.b1Higgs).CSV(), allJets.at(interpr.b2Higgs).CSV()));
+    
+    
+    TLorentzVector p4Lep(lepton.P4());
+    TLorentzVector p4Top(interpr.p4RecoTop);
+    
+    TVector3 b = p4RecoW.BoostVector();
+    p4Lep.Boost(-b);
+    p4Top.Boost(-b);
+    
+    CosLepTopW = -p4Lep.Vect().Dot(p4Top.Vect()) / p4Lep.Vect().Mag() /
+     p4Top.Vect().Mag();
 }

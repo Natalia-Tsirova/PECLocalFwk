@@ -15,9 +15,11 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TLorentzVector.h>
+#include <TRandom3.h>
 
 #include <string>
 #include <vector>
+#include <memory>
 
 
 /**
@@ -66,7 +68,9 @@ struct Interpretation
  * generator-level top-quark, Higgs boson, and recoil quark is calculated (metrics $\Delta R \oplus
  * \Delta p_T^{rel}$ is used). The interpretations are ordered in the distance (in increasing
  * order). Finally, a set of recontruction-level observables is calculated for each interpretation
- * and stored in a ROOT tree (along with information about the distance).
+ * and stored in a ROOT tree (along with information about the distance). The user can also
+ * configure the plugin to store only one interpretation per event (see description of
+ * THRecoTrainPlugin::pruned data member for details).
  * 
  * Details are available a talk by Andrey Popov in [1].
  * [1] https://indico.cern.ch/conferenceDisplay.py?confId=251808 (password is "tHmeeting")
@@ -75,7 +79,8 @@ class THRecoTrainPlugin: public Plugin
 {
     public:
         /// Constructor
-        THRecoTrainPlugin(std::string const &outDirectory, BTagger const &bTagger);
+        THRecoTrainPlugin(std::string const &outDirectory, BTagger const &bTagger,
+         bool pruned = false);
 
     public:
         /**
@@ -107,6 +112,11 @@ class THRecoTrainPlugin: public Plugin
         bool ProcessEvent();
     
     private:
+        /// Calculates reconstruction-level observables for a given event interpretation
+        void CalculateRecoVars(Interpretation const &interpr, Lepton const &lepton,
+         TLorentzVector const &p4RecoW, double Ht);
+    
+    private:
         /// Pointer to PECReaderPlugin
         PECReaderPlugin const *reader;
         
@@ -115,6 +125,20 @@ class THRecoTrainPlugin: public Plugin
         
         /// Directory to store output files
         std::string outDirectory;
+        
+        /**
+         * \brief Indicates if the output tree must be pruned
+         * 
+         * In the default workflow all the interpretations of an event are written to the output
+         * tree. But if this flag is set to true (by default it is false), only one interpretation
+         * per event is stored. The interpretation is chosen randomly. The best interpretation is
+         * picked up with a probability of 0.5; the rest of probability is shared uniformly among
+         * the background combinations.
+         */
+        bool pruned;
+        
+        /// Random-number generator
+        std::unique_ptr<TRandom3> rGen;
         
         /// Vector off all jets in an event
         std::vector<Jet> allJets;
