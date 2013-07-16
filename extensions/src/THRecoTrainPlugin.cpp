@@ -123,7 +123,8 @@ void THRecoTrainPlugin::EndRun()
 bool THRecoTrainPlugin::ProcessEvent()
 {
     // Make sure the event contains reasonable physics objects
-    if ((*reader)->GetLeptons().size() not_eq 1 or (*reader)->GetJets().size() < 2)
+    if ((*reader)->GetLeptons().size() not_eq 1 or
+     (*reader)->GetJets().size() + (*reader)->GetAdditionalJets().size() < 4)
         return false;
     
     
