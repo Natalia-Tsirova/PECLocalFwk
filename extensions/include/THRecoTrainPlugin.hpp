@@ -158,6 +158,9 @@ class THRecoTrainPlugin: public Plugin
         // Output buffers
         ULong64_t eventNumber, runNumber, lumiSection;
         
+        Float_t NJets30, NTags30;
+        //^ Needed to allow the same tuples for 3t and 4t bins
+        
         Int_t InterpretationRank;
         //^ 0 for the best interprothesis, 2 for the worst one, 1 for the rest of them. The branch
         //is used mostly to demarcate interpretations of different events

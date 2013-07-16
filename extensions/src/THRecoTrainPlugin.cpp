@@ -64,6 +64,9 @@ void THRecoTrainPlugin::BeginRun(Dataset const &dataset)
     tree->Branch("event", &eventNumber);
     tree->Branch("lumiSection", &lumiSection);
     
+    tree->Branch("NJets30", &NJets30);
+    tree->Branch("NTags30", &NTags30);
+    
     tree->Branch("InterpretationRank", &InterpretationRank);
     tree->Branch("Distance", &Distance);
     
@@ -181,6 +184,13 @@ bool THRecoTrainPlugin::ProcessEvent()
     runNumber = eventID.Run();
     eventNumber = eventID.Event();
     lumiSection = eventID.LumiBlock();
+    
+    NJets30 = (*reader)->GetJets().size();
+    NTags30 = 0;
+    
+    for (auto const &j: (*reader)->GetJets())
+        if (bTagger(j))
+            ++NTags30;
     
     weight = (*reader)->GetCentralWeight();
     
