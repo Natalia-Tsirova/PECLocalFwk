@@ -9,11 +9,13 @@ function set_environment
         source /afs/cern.ch/sw/lcg/external/gcc/$gcc_version/x86_64-slc5/setup.sh ""
         root_version="5.34.09"
         source /afs/cern.ch/sw/lcg/app/releases/ROOT/$root_version/x86_64-slc5-gcc46-opt/root/bin/thisroot.sh
-        #echo "GCC $gcc_version and ROOT $root_version are configured";;
+        #echo "GCC $gcc_version and ROOT $root_version are configured"
+        ;;
         
         "-p")
         export PEC_FWK_INSTALL=`pwd`
-        #echo "Framework-specific variables have been set";;
+        #echo "Framework-specific variables have been set"
+        ;;
     esac
 }
 
