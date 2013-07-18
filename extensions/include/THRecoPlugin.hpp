@@ -24,40 +24,6 @@
 #include <bnn_thq_reco_3t.hpp>
 
 
-using namespace thq_reco_3t;
-
-
-/**
- * \class Interpretation
- * \brief Auxiliary class to describe an interpretation of an event
- */
-struct Interpretation
-{
-    /// Index of b-jet from the top-quark
-    unsigned bTop;
-    
-    /// Index of recoil light-flavour jet
-    unsigned qRecoil;
-    
-    /// Index of b-jets from the higgs decay
-    unsigned b1Higgs, b2Higgs;
-    
-    /**
-     * \brief Four-momentum of reconstructed top-quark
-     * 
-     * It is not needed to define an interpretation, but it is saved for computational efficiency.
-     */
-    TLorentzVector p4RecoTop;
-    
-    /**
-     * \brief Four-momentum of reconstructed Higgs boson
-     * 
-     * It is not needed to define an interpretation, but it is saved for computational efficiency.
-     */
-    TLorentzVector p4RecoHiggs;
-};
-
-
 /**
  * \class THRecoPlugin
  * \brief Performs an MVA reconstruction of a thq event
@@ -76,6 +42,37 @@ struct Interpretation
  */
 class THRecoPlugin: public Plugin
 {
+    public:
+        /**
+         * \struct Interpretation
+         * \brief Auxiliary class to describe an interpretation of an event
+         */
+        struct Interpretation
+        {
+            /// Index of b-jet from the top-quark
+            unsigned bTop;
+            
+            /// Index of recoil light-flavour jet
+            unsigned qRecoil;
+            
+            /// Index of b-jets from the higgs decay
+            unsigned b1Higgs, b2Higgs;
+            
+            /**
+             * \brief Four-momentum of reconstructed top-quark
+             * 
+             * It is not needed to define an interpretation, but it is saved for computational efficiency.
+             */
+            TLorentzVector p4RecoTop;
+            
+            /**
+             * \brief Four-momentum of reconstructed Higgs boson
+             * 
+             * It is not needed to define an interpretation, but it is saved for computational efficiency.
+             */
+            TLorentzVector p4RecoHiggs;
+        };
+    
     public:
         /// Constructor
         THRecoPlugin(BTagger const &bTagger);
@@ -134,7 +131,7 @@ class THRecoPlugin: public Plugin
         std::vector<unsigned> unmaskedJetIndices;
         
         /// The neural network to perform reconstruction
-        BNN bnnReco;
+        thq_reco_3t::BNN bnnReco;
         
         /// Four-momentum of the reconstructed top quark
         Candidate recoTopQuark;

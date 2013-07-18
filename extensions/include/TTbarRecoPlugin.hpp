@@ -24,40 +24,6 @@
 #include <bnn_ttbar_reco_3t.hpp>
 
 
-using namespace ttbar_reco_3t;
-
-
-/**
- * \class Interpretation
- * \brief Auxiliary class to describe an interpretation of an event
- */
-struct Interpretation
-{
-    /// Index of b-jet from the top-quark that decays semi-leptonically
-    unsigned bTopLep;
-    
-    /// Index of b-jet from the top-quark that decays hadronically
-    unsigned bTopHad;
-    
-    /// Indices of light-flavour jets from hadronically decaying top-quark
-    unsigned q1TopHad, q2TopHad;
-    
-    /**
-     * \brief Four-momenta of reconstructed top-quarks
-     * 
-     * It is not needed to define an interpretation, but it is saved for computational efficiency.
-     */
-    TLorentzVector p4RecoTopLep, p4RecoTopHad;
-    
-    /**
-     * \brief Four-momentum of reconstructed W boson from hadronically decaying top-quark
-     * 
-     * It is not needed to define an interpretation, but it is saved for computational efficiency.
-     */
-    TLorentzVector p4RecoWHad;
-};
-
-
 /**
  * \class TTbarRecoPlugin
  * \brief Performs an MVA reconstruction of ttbar events in semileptonic channel
@@ -76,6 +42,39 @@ struct Interpretation
  */
 class TTbarRecoPlugin: public Plugin
 {
+    public:
+        /**
+         * \struct Interpretation
+         * \brief Auxiliary class to describe an interpretation of an event
+         */
+        struct Interpretation
+        {
+            /// Index of b-jet from the top-quark that decays semi-leptonically
+            unsigned bTopLep;
+            
+            /// Index of b-jet from the top-quark that decays hadronically
+            unsigned bTopHad;
+            
+            /// Indices of light-flavour jets from hadronically decaying top-quark
+            unsigned q1TopHad, q2TopHad;
+            
+            /**
+             * \brief Four-momenta of reconstructed top-quarks
+             * 
+             * It is not needed to define an interpretation, but it is saved for computational
+             * efficiency.
+             */
+            TLorentzVector p4RecoTopLep, p4RecoTopHad;
+            
+            /**
+             * \brief Four-momentum of reconstructed W boson from hadronically decaying top-quark
+             * 
+             * It is not needed to define an interpretation, but it is saved for computational
+             * efficiency.
+             */
+            TLorentzVector p4RecoWHad;
+        };
+            
     public:
         /// Constructor
         TTbarRecoPlugin(BTagger const &bTagger);
@@ -137,7 +136,7 @@ class TTbarRecoPlugin: public Plugin
         std::vector<unsigned> unmaskedJetIndices;
         
         /// The neural network to perform reconstruction
-        BNN bnnReco;
+        ttbar_reco_3t::BNN bnnReco;
         
         /// Reconstructed top-quark that decays semileptonically
         Candidate recoTopQuarkLep;
