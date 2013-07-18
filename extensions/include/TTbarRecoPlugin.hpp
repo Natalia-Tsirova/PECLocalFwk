@@ -116,6 +116,14 @@ class TTbarRecoPlugin: public Plugin
         
         /// Returns reconstructed W-boson from hadronic decay of a top-quark
         Candidate const &GetRecoWBosonHad() const;
+        
+        /**
+         * \brief Returns the best interpretation
+         * 
+         * Expected to be used on rare occasions when four-momenta of reconstruced objects are not
+         * sufficient.
+         */
+        Interpretation const &GetInterpretation() const;
     
     private:
         /// Calculates reconstruction-level observables for a given event interpretation
@@ -146,6 +154,9 @@ class TTbarRecoPlugin: public Plugin
         
         /// Reconstructed W-boson from hadronic decay of a top-quark
         Candidate recoWBosonHad;
+        
+        /// Best interpretation of the current event
+        Interpretation bestInterpretation;
         
         
         // Input variables (not all of them are used in the BNN)

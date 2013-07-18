@@ -60,8 +60,6 @@ bool THRecoPlugin::ProcessEvent()
     TLorentzVector p4RecoW(lepton.P4() + (*reader)->GetNeutrino().P4());
     
     
-    // Variables to keep trace of the best event interpretation
-    Interpretation bestInterpretation;
     double bestBNNScore = -100.;
     
     
@@ -165,6 +163,12 @@ Candidate const &THRecoPlugin::GetRecoTopQuark() const
 Candidate const &THRecoPlugin::GetRecoHiggsBoson() const
 {
     return recoHiggsBoson;
+}
+
+
+THRecoPlugin::Interpretation const &THRecoPlugin::GetInterpretation() const
+{
+    return bestInterpretation;
 }
 
 

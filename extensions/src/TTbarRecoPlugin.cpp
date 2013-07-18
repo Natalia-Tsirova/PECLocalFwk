@@ -61,7 +61,6 @@ bool TTbarRecoPlugin::ProcessEvent()
     
     
     // Variables to keep trace of the best event interpretation
-    Interpretation bestInterpretation;
     double bestBNNScore = -100.;
     
     
@@ -172,6 +171,12 @@ Candidate const &TTbarRecoPlugin::GetRecoTopQuarkHad() const
 Candidate const &TTbarRecoPlugin::GetRecoWBosonHad() const
 {
     return recoWBosonHad;
+}
+
+
+TTbarRecoPlugin::Interpretation const &TTbarRecoPlugin::GetInterpretation() const
+{
+    return bestInterpretation;
 }
 
 

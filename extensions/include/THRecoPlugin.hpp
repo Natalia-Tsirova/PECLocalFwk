@@ -111,6 +111,14 @@ class THRecoPlugin: public Plugin
         
         /// Returns reconstruced Higgs boson
         Candidate const &GetRecoHiggsBoson() const;
+        
+        /**
+         * \brief Returns the best interpretation
+         * 
+         * Expected to be used on rare occasions when four-momenta of reconstruced objects are not
+         * sufficient.
+         */
+        Interpretation const &GetInterpretation() const;
     
     private:
         /// Calculates reconstruction-level observables for a given event interpretation
@@ -132,6 +140,9 @@ class THRecoPlugin: public Plugin
         
         /// The neural network to perform reconstruction
         thq_reco_3t::BNN bnnReco;
+        
+        /// Best interpretation of the current event
+        Interpretation bestInterpretation;
         
         /// Four-momentum of the reconstructed top quark
         Candidate recoTopQuark;
