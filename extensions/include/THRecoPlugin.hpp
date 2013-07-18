@@ -112,6 +112,9 @@ class THRecoPlugin: public Plugin
         /// Returns reconstruced Higgs boson
         Candidate const &GetRecoHiggsBoson() const;
         
+        /// Returns reconstructed jet from the recoil light-flavour quark
+        Candidate const &GetRecoRecoilQuark() const;
+        
         /**
          * \brief Returns the best interpretation
          * 
@@ -144,11 +147,14 @@ class THRecoPlugin: public Plugin
         /// Best interpretation of the current event
         Interpretation bestInterpretation;
         
-        /// Four-momentum of the reconstructed top quark
+        /// Reconstructed top quark
         Candidate recoTopQuark;
         
-        /// Four-momentum of the reconstructed Higgs boson
+        /// Reconstructed Higgs boson
         Candidate recoHiggsBoson;
+        
+        /// Reconstructed recoil quark
+        Candidate recoRecoilQuark;
         
         
         // Input variables (not all of them are used in the BNN)

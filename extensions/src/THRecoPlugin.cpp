@@ -148,6 +148,7 @@ bool THRecoPlugin::ProcessEvent()
     //found. Set the reconstructed four-moment so the user can read them
     recoTopQuark.SetP4(bestInterpretation.p4RecoTop);
     recoHiggsBoson.SetP4(bestInterpretation.p4RecoHiggs);
+    recoRecoilQuark.SetP4(allJets.at(bestInterpretation.qRecoil).P4());
     
     
     return true;
@@ -163,6 +164,12 @@ Candidate const &THRecoPlugin::GetRecoTopQuark() const
 Candidate const &THRecoPlugin::GetRecoHiggsBoson() const
 {
     return recoHiggsBoson;
+}
+
+
+Candidate const &THRecoPlugin::GetRecoRecoilQuark() const
+{
+    return recoRecoilQuark;
 }
 
 
