@@ -4,8 +4,6 @@
 
 #include <deque>
 
-#include <sys/stat.h>
-
 
 using namespace std;
 

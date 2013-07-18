@@ -60,19 +60,16 @@ struct Interpretation
 
 /**
  * \class THRecoPlugin
- * \brief Creates tuples to train a BNN for thq MVA reconstruction
+ * \brief Performs an MVA reconstruction of a thq event
  * 
  * There are four energetic jets in the final state of thq process. The class considers all the ways
  * to choose four jets out of all jets in an event (combination of PECReader::GetJets() and
  * PECReader::GetAdditionalJets()). All the possible associations of these four jets to parent
  * objects (top-quark, Higgs boson, or recoil quark) are constructed. Such combinatorics defines a
- * set of interpretations of an event. For each interpretations a distance between reconstructed and
- * generator-level top-quark, Higgs boson, and recoil quark is calculated (metrics $\Delta R \oplus
- * \Delta p_T^{rel}$ is used). The interpretations are ordered in the distance (in increasing
- * order). Finally, a set of reconstruction-level observables is calculated for each interpretation
- * and stored in a ROOT tree (along with information about the distance). The user can also
- * configure the plugin to store only one interpretation per event (see description of
- * THRecoPlugin::pruned data member for details).
+ * set of interpretations of an event. A likelihood of each interpretation is calculated with the
+ * help of a dedicated BNN. Finally, the interpretation with the highest BNN score is chosen. It
+ * defines four-momenta of the reconstructed top-quark and Higgs boson, which are accessible by the
+ * user via dedicated getters.
  * 
  * Details are available a talk by Andrey Popov in [1].
  * [1] https://indico.cern.ch/conferenceDisplay.py?confId=251808 (password is "tHmeeting")
