@@ -8,6 +8,7 @@
 #include <TMatrixDSymEigen.h>
 
 #include <deque>
+/**/#include <iostream>
 
 #include <sys/stat.h>
 
@@ -258,6 +259,9 @@ bool THInputVarsPlugin::ProcessEvent()
     tt_DeltaRLightJets = q1TopHad.P4().DeltaR(q2TopHad.P4());
     tt_MaxMassBHadQ = max((bTopHad.P4() + q1TopHad.P4()).M(), (bTopHad.P4() + q2TopHad.P4()).M());
     
+    
+    // Write the calculated variables to the tree
+    tree->Fill();
     
     return true;
 }
