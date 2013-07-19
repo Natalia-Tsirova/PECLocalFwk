@@ -692,6 +692,17 @@ bool PECReader::BuildAndSelectEvent()
             break;
     }
     
+    
+    // For unknown reason extremely rarely MET can be NaN. Check for it
+    if (isnan(metPt[metIndex]) or isnan(metPhi[metIndex]))
+    {
+        logger << "WARNING: MET is NaN in event #" << curEventTree << " in file \"" <<
+         sourceFile->GetName() << "\" (ID " << runNumber << ":" << lumiSection << ":" <<
+         eventNumber << "). The event is skipped." << eom;
+        return false;
+    }
+    
+    
     // Save MET to the dedicated variable
     correctedMET.SetPtEtaPhiM(metPt[metIndex], 0., metPhi[metIndex], 0.);
     
