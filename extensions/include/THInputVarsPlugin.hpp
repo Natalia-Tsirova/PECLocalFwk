@@ -25,22 +25,13 @@
 
 /**
  * \class THInputVarsPlugin
- * \brief Creates tuples to train a BNN for thq MVA reconstruction
+ * \brief Creates tuples to train a BNN for extraction of thq events
  * 
- * There are four energetic jets in the final state of thq process. The class considers all the ways
- * to choose four jets out of all jets in an event (combination of PECReader::GetJets() and
- * PECReader::GetAdditionalJets()). All the possible associations of these four jets to parent
- * objects (top-quark, Higgs boson, or recoil quark) are constructed. Such combinatorics defines a
- * set of interpretations of an event. For each interpretations a distance between reconstructed and
- * generator-level top-quark, Higgs boson, and recoil quark is calculated (metrics $\Delta R \oplus
- * \Delta p_T^{rel}$ is used). The interpretations are ordered in the distance (in increasing
- * order). Finally, a set of reconstruction-level observables is calculated for each interpretation
- * and stored in a ROOT tree (along with information about the distance). The user can also
- * configure the plugin to store only one interpretation per event (see description of
- * THInputVarsPlugin::pruned data member for details).
- * 
- * Details are available a talk by Andrey Popov in [1].
- * [1] https://indico.cern.ch/conferenceDisplay.py?confId=251808 (password is "tHmeeting")
+ * The class calculates and stores a set of input variables to perform tqh vs ttbar discrimination.
+ * Each event is reconstructed under two alternative hypotheses in parallel: as a thq event and as
+ * a semileptonic ttbar one. (The reconstruction is done with the help of dedicated plugins.) For
+ * each hypothesis a set of observables is calculated and stored in a ROOT file. In addition to it,
+ * several global variables that do not rely on event interpretation are calculated.
  */
 class THInputVarsPlugin: public Plugin
 {
