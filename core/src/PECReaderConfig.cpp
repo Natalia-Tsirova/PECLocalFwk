@@ -18,7 +18,8 @@ PECReaderConfig::PECReaderConfig(PECReaderConfig const &src):
     bTagDatabase(new BTagDatabase(*src.bTagDatabase)),
     puReweighter(src.puReweighter->Clone()),
     weightFilesLocation(src.weightFilesLocation),
-    readHardInteraction(src.readHardInteraction)
+    readHardInteraction(src.readHardInteraction),
+    syst(src.syst)
 {}
 
 
