@@ -1,4 +1,4 @@
-#include <THInputVarsPlugin.hpp>
+#include <THEvalBNNPlugin.hpp>
 
 #include <Processor.hpp>
 #include <ROOTLock.hpp>
@@ -15,8 +15,8 @@
 using namespace std;
 
 
-THInputVarsPlugin::THInputVarsPlugin(string const &outDirectory_, BTagger const &bTagger_):
-    Plugin("THInputVars"),
+THEvalBNNPlugin::THEvalBNNPlugin(string const &outDirectory_, BTagger const &bTagger_):
+    Plugin("THEvalBNN"),
     bTagger(bTagger_), outDirectory(outDirectory_)
 {
     // Make sure the directory path ends with a slash
@@ -31,13 +31,13 @@ THInputVarsPlugin::THInputVarsPlugin(string const &outDirectory_, BTagger const 
 }
 
 
-Plugin *THInputVarsPlugin::Clone() const
+Plugin *THEvalBNNPlugin::Clone() const
 {
-    return new THInputVarsPlugin(outDirectory, bTagger);
+    return new THEvalBNNPlugin(outDirectory, bTagger);
 }
 
 
-void THInputVarsPlugin::BeginRun(Dataset const &dataset)
+void THEvalBNNPlugin::BeginRun(Dataset const &dataset)
 {
     // Save pointers to other required plugins
     reader = dynamic_cast<PECReaderPlugin const *>(processor->GetPluginBefore("Reader", name));
@@ -55,7 +55,7 @@ void THInputVarsPlugin::BeginRun(Dataset const &dataset)
      "recreate");
     
     // Create the tree
-    tree = new TTree("Vars", "Observables for thq extraction");
+    tree = new TTree("Vars", "Decision of BNN to discriminate thq from ttbar");
     
     // End of critical block
     ROOTLock::Unlock();
@@ -69,44 +69,14 @@ void THInputVarsPlugin::BeginRun(Dataset const &dataset)
     tree->Branch("NJets30", &NJets30);
     tree->Branch("NTags30", &NTags30);
     
-    tree->Branch("thq_MassHiggs", &thq_MassHiggs);
-    tree->Branch("thq_PtHiggs", &thq_PtHiggs);
-    tree->Branch("thq_EtaHiggs", &thq_EtaHiggs);
-    
-    tree->Branch("thq_PtLJet", &thq_PtLJet);
-    tree->Branch("thq_EtaLJet", &thq_EtaLJet);
-    
-    tree->Branch("thq_DeltaRTopHiggs", &thq_DeltaRTopHiggs);
-    tree->Branch("thq_DeltaRBJetsHiggs", &thq_DeltaRBJetsHiggs);
-    
-    tree->Branch("thq_CosLepLJetTH", &thq_CosLepLJetTH);
-    
-    tree->Branch("thq_MassTopHiggs", &thq_MassTopHiggs);
-    
-    tree->Branch("tt_MassTopHad", &tt_MassTopHad);
-    tree->Branch("tt_PtTopHad", &tt_PtTopHad);
-    tree->Branch("tt_EtaTopHad", &tt_EtaTopHad);
-    
-    tree->Branch("tt_MassWHad", &tt_MassWHad);
-    tree->Branch("tt_PtWHad", &tt_PtWHad);
-    tree->Branch("tt_EtaWHad", &tt_EtaWHad);
-    
-    tree->Branch("tt_RelHt", &tt_RelHt);
-    tree->Branch("tt_DeltaRLightJets", &tt_DeltaRLightJets);
-    tree->Branch("tt_MaxMassBHadQ", &tt_MaxMassBHadQ);
-    
-    tree->Branch("glb_PtJ1", &glb_PtJ1);
-    tree->Branch("glb_PtJ2", &glb_PtJ2);
-    
-    tree->Branch("glb_SqrtSHat", &glb_SqrtSHat);
-    tree->Branch("glb_Sphericity", &glb_Sphericity);
-    
+    tree->Branch("decision", &bnnDecision);
+        
     if (dataset.IsMC())
         tree->Branch("weight", &weight);
 }
 
 
-void THInputVarsPlugin::EndRun()
+void THEvalBNNPlugin::EndRun()
 {
     // Operations with ROOT objects performed here are not thread-safe and must be guarded
     ROOTLock::Lock();
@@ -123,7 +93,7 @@ void THInputVarsPlugin::EndRun()
 }
 
 
-bool THInputVarsPlugin::ProcessEvent()
+bool THEvalBNNPlugin::ProcessEvent()
 {
     // Put all the reconstructed jets into a single vector
     allJets.clear();
@@ -160,15 +130,15 @@ bool THInputVarsPlugin::ProcessEvent()
     TLorentzVector p4RecoW(lepton.P4() + (*reader)->GetNeutrino().P4());
     
     
-    glb_PtJ1 = allJets.at(0).Pt();
-    glb_PtJ2 = allJets.at(1).Pt();
+    double glb_PtJ1 = allJets.at(0).Pt();
+    //double glb_PtJ2 = allJets.at(1).Pt();
     
     TLorentzVector p4AllJets;
     
     for (auto const &j: allJets)
         p4AllJets += j.P4();
     
-    glb_SqrtSHat = (p4AllJets + p4RecoW).M();
+    double glb_SqrtSHat = (p4AllJets + p4RecoW).M();
     
     
     // Calculate sphericity
@@ -200,7 +170,7 @@ bool THInputVarsPlugin::ProcessEvent()
     TMatrixDSymEigen eigenValCalc(sphericityTensor);
     TVectorD eigenVals(eigenValCalc.GetEigenValues());
     
-    glb_Sphericity = 1.5 * (eigenVals[1] + eigenVals[2]);
+    double glb_Sphericity = 1.5 * (eigenVals[1] + eigenVals[2]);
     
     
     // Calculate variables reconstructed under thq hypothesis
@@ -208,18 +178,18 @@ bool THInputVarsPlugin::ProcessEvent()
     auto const &top = thqReconstructor->GetRecoTopQuark();
     auto const &recoilQuark = thqReconstructor->GetRecoRecoilQuark();
     
-    thq_MassHiggs = higgs.M();
-    thq_PtHiggs = higgs.Pt();
-    thq_EtaHiggs = higgs.Eta();
+    double thq_MassHiggs = higgs.M();
+    double thq_PtHiggs = higgs.Pt();
+    //double thq_EtaHiggs = higgs.Eta();
     
-    thq_PtLJet = recoilQuark.Pt();
-    thq_EtaLJet = recoilQuark.Eta();
+    //double thq_PtLJet = recoilQuark.Pt();
+    double thq_EtaLJet = recoilQuark.Eta();
     
-    thq_DeltaRTopHiggs = higgs.P4().DeltaR(top.P4());
-    thq_DeltaRBJetsHiggs = allJets.at(thqReconstructor->GetInterpretation().b1Higgs).P4().DeltaR(
-     allJets.at(thqReconstructor->GetInterpretation().b2Higgs).P4());
+    //double thq_DeltaRTopHiggs = higgs.P4().DeltaR(top.P4());
+    //double thq_DeltaRBJetsHiggs = allJets.at(thqReconstructor->GetInterpretation().b1Higgs).P4().DeltaR(
+    // allJets.at(thqReconstructor->GetInterpretation().b2Higgs).P4());
     
-    thq_MassTopHiggs = (higgs.P4() + top.P4()).M();
+    //double thq_MassTopHiggs = (higgs.P4() + top.P4()).M();
     
     
     // Calculate thq_CosLepLJetTH
@@ -233,30 +203,36 @@ bool THInputVarsPlugin::ProcessEvent()
     boostedLJet.Boost(-b);
     TVector3 const p3LJet(boostedLJet.Vect());
     
-    thq_CosLepLJetTH = p3Lepton.Dot(p3LJet) / (p3Lepton.Mag() * p3LJet.Mag());
+    double thq_CosLepLJetTH = p3Lepton.Dot(p3LJet) / (p3Lepton.Mag() * p3LJet.Mag());
     
     
     // Finally calculate observables constructed under ttbar hypothesis
     auto const &topHad = ttbarReconstructor->GetRecoTopQuarkHad();
     auto const &wHad = ttbarReconstructor->GetRecoWBosonHad();
     
-    tt_MassTopHad = topHad.M();
-    tt_PtTopHad = topHad.Pt();
-    tt_EtaTopHad = topHad.Eta();
+    double tt_MassTopHad = topHad.M();
+    //double tt_PtTopHad = topHad.Pt();
+    //double tt_EtaTopHad = topHad.Eta();
     
-    tt_MassWHad = wHad.M();
-    tt_PtWHad = wHad.Pt();
-    tt_EtaWHad = wHad.Eta();
+    double tt_MassWHad = wHad.M();
+    //double tt_PtWHad = wHad.Pt();
+    //double tt_EtaWHad = wHad.Eta();
     
-    tt_RelHt = (topHad.Pt() + ttbarReconstructor->GetRecoTopQuarkLep().Pt()) / Ht;
+    //double tt_RelHt = (topHad.Pt() + ttbarReconstructor->GetRecoTopQuarkLep().Pt()) / Ht;
     
     
     auto const &q1TopHad = allJets.at(ttbarReconstructor->GetInterpretation().q1TopHad);
     auto const &q2TopHad = allJets.at(ttbarReconstructor->GetInterpretation().q2TopHad);
     auto const &bTopHad = allJets.at(ttbarReconstructor->GetInterpretation().bTopHad);
     
-    tt_DeltaRLightJets = q1TopHad.P4().DeltaR(q2TopHad.P4());
-    tt_MaxMassBHadQ = max((bTopHad.P4() + q1TopHad.P4()).M(), (bTopHad.P4() + q2TopHad.P4()).M());
+    double tt_DeltaRLightJets = q1TopHad.P4().DeltaR(q2TopHad.P4());
+    double tt_MaxMassBHadQ = max((bTopHad.P4() + q1TopHad.P4()).M(), (bTopHad.P4() + q2TopHad.P4()).M());
+    
+    
+    // Apply the BNN
+    bnnDecision =  bnnDiscr(log(glb_PtJ1), glb_Sphericity, log(glb_SqrtSHat), fabs(thq_EtaLJet),
+     thq_CosLepLJetTH, log(thq_MassHiggs), log(thq_PtHiggs), tt_DeltaRLightJets, log(tt_MassTopHad),
+     log(tt_MassWHad), log(tt_MaxMassBHadQ));
     
     
     // Write the calculated variables to the tree
