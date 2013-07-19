@@ -15,9 +15,10 @@
 using namespace std;
 
 
-THEvalBNNPlugin::THEvalBNNPlugin(string const &outDirectory_, BTagger const &bTagger_):
+THEvalBNNPlugin::THEvalBNNPlugin(string const &outDirectory_, BTagger const &bTagger_,
+ bool saveSystWeights_):
     Plugin("THEvalBNN"),
-    bTagger(bTagger_), outDirectory(outDirectory_)
+    bTagger(bTagger_), outDirectory(outDirectory_), saveSystWeights(saveSystWeights_)
 {
     // Make sure the directory path ends with a slash
     if (outDirectory.back() != '/')
@@ -28,12 +29,16 @@ THEvalBNNPlugin::THEvalBNNPlugin(string const &outDirectory_, BTagger const &bTa
     
     if (stat(outDirectory.c_str(), &dirStat) != 0)  // the directory does not exist
         mkdir(outDirectory.c_str(), 0755);
+    
+    
+    // Set number of weights
+    nWeights = (saveSystWeights) ? 7 : 1;
 }
 
 
 Plugin *THEvalBNNPlugin::Clone() const
 {
-    return new THEvalBNNPlugin(outDirectory, bTagger);
+    return new THEvalBNNPlugin(outDirectory, bTagger, saveSystWeights);
 }
 
 
@@ -72,7 +77,10 @@ void THEvalBNNPlugin::BeginRun(Dataset const &dataset)
     tree->Branch("decision", &bnnDecision);
         
     if (dataset.IsMC())
-        tree->Branch("weight", &weight);
+    {
+        tree->Branch("nWeights", &nWeights);
+        tree->Branch("weights", weights, "weight[nWeights]/F");
+    }
 }
 
 
@@ -119,8 +127,6 @@ bool THEvalBNNPlugin::ProcessEvent()
     for (auto const &j: (*reader)->GetJets())
         if (bTagger(j))
             ++NTags30;
-    
-    weight = (*reader)->GetCentralWeight();
     
     double Ht = lepton.Pt() + met.Pt();
     
@@ -233,6 +239,25 @@ bool THEvalBNNPlugin::ProcessEvent()
     bnnDecision =  bnnDiscr(log(glb_PtJ1), glb_Sphericity, log(glb_SqrtSHat), fabs(thq_EtaLJet),
      thq_CosLepLJetTH, log(thq_MassHiggs), log(thq_PtHiggs), tt_DeltaRLightJets, log(tt_MassTopHad),
      log(tt_MassWHad), log(tt_MaxMassBHadQ));
+    
+    
+    // Calculate weights
+    weights[0] = (*reader)->GetCentralWeight();
+    
+    if (saveSystWeights)
+    {
+        auto const &puWeights = (*reader)->GetSystWeight(SystTypeWeight::PileUp);
+        weights[1] = puWeights.front().up;
+        weights[2] = puWeights.front().down;
+        
+        auto const &tagWeights = (*reader)->GetSystWeight(SystTypeWeight::TagRate);
+        weights[3] = tagWeights.front().up;
+        weights[4] = tagWeights.front().down;
+        
+        auto const &mistagWeights = (*reader)->GetSystWeight(SystTypeWeight::MistagRate);
+        weights[5] = mistagWeights.front().up;
+        weights[6] = mistagWeights.front().down;
+    }
     
     
     // Write the calculated variables to the tree

@@ -39,7 +39,8 @@ class THEvalBNNPlugin: public Plugin
 {
     public:
         /// Constructor
-        THEvalBNNPlugin(std::string const &outDirectory, BTagger const &bTagger);
+        THEvalBNNPlugin(std::string const &outDirectory, BTagger const &bTagger,
+         bool saveSystWeights);
 
     public:
         /**
@@ -86,6 +87,9 @@ class THEvalBNNPlugin: public Plugin
         /// Directory to store output files
         std::string outDirectory;
         
+        /// Specifies whether weights from weight-only systematics should be saved
+        bool saveSystWeights;
+        
         /// The BNN to discriminate thq from ttbar
         ttbar_discr_3t::BNN bnnDiscr;
         
@@ -108,5 +112,8 @@ class THEvalBNNPlugin: public Plugin
         
         Float_t bnnDecision;
         
-        Float_t weight;
+        Int_t nWeights;
+        Float_t weights[16];
+        //^ 0: central weight; 1, 2: pile-up up and down; 3, 4: tag rate up and down; 5, 6: mistag
+        //rate up and down
 };
