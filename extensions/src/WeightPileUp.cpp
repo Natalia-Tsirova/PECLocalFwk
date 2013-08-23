@@ -142,10 +142,12 @@ WeightPileUpInterface::Weights WeightPileUp::GetWeights(double nTruth) const
     weights.central = dataPUHist->GetBinContent(bin) / mcProb;
     
     bin = dataPUHist->FindFixBin(nTruth * (1. + systError));
-    weights.up = dataPUHist->GetBinContent(bin) / mcProb;
+    weights.up = dataPUHist->GetBinContent(bin) / mcProb * (1. + systError);
+    //^ The last multiplier is needed to correct for the total normalisation due to rescale in
+    //the variable of integration. Same applies to the down weight below
     
     bin = dataPUHist->FindFixBin(nTruth * (1. - systError));
-    weights.down = dataPUHist->GetBinContent(bin) / mcProb;
+    weights.down = dataPUHist->GetBinContent(bin) / mcProb * (1. - systError);
     
     
     return weights;
