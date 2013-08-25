@@ -21,7 +21,8 @@
 #include <memory>
 
 
-#include <bnn_ttbar_reco_3t.hpp>
+//#include <bnn_ttbar_reco_3t.hpp>
+ #include <bnn_ttbar_reco_CSVM_3t.hpp>
 
 
 /**
@@ -144,7 +145,8 @@ class TTbarRecoPlugin: public Plugin
         std::vector<unsigned> unmaskedJetIndices;
         
         /// The neural network to perform reconstruction
-        ttbar_reco_3t::BNN bnnReco;
+        //ttbar_reco_3t::BNN bnnReco;
+        ttbar_reco_CSVM_3t::BNN bnnReco;
         
         /// Reconstructed top-quark that decays semileptonically
         Candidate recoTopQuarkLep;

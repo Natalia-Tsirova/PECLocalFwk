@@ -21,7 +21,8 @@
 #include <memory>
 
 
-#include <bnn_thq_reco_3t.hpp>
+//#include <bnn_thq_reco_3t.hpp>
+ #include <bnn_thq_reco_CSVM_3t.hpp>
 
 
 /**
@@ -142,7 +143,8 @@ class THRecoPlugin: public Plugin
         std::vector<unsigned> unmaskedJetIndices;
         
         /// The neural network to perform reconstruction
-        thq_reco_3t::BNN bnnReco;
+        //thq_reco_3t::BNN bnnReco;
+        thq_reco_CSVM_3t::BNN bnnReco;
         
         /// Best interpretation of the current event
         Interpretation bestInterpretation;

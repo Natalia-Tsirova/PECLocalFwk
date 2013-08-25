@@ -22,7 +22,8 @@
 #include <vector>
 
 
-#include <bnn_ttbar_discr_3t.hpp>
+//#include <bnn_ttbar_discr_3t.hpp>
+#include <bnn_ttbar_discr_CSVM_3t.hpp>
 
 
 /**
@@ -91,7 +92,8 @@ class THEvalBNNPlugin: public Plugin
         bool saveSystWeights;
         
         /// The BNN to discriminate thq from ttbar
-        ttbar_discr_3t::BNN bnnDiscr;
+        //ttbar_discr_3t::BNN bnnDiscr;
+        ttbar_discr_CSVM_3t::BNN bnnDiscr;
         
         
         /// Vector off all jets in an event
