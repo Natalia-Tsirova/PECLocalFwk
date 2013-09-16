@@ -1,14 +1,9 @@
 #include <GenericEventSelection.hpp>
 
-#include <EventCounter.hpp>
-
 #include <algorithm>
 
 
 using namespace std;
-
-
-extern EventCounter eventCounter;  // defined in the module containing main function
 
 
 GenericEventSelection::JetTagBin::JetTagBin(unsigned nJets_, unsigned nTags_):
@@ -28,7 +23,7 @@ GenericEventSelection::GenericEventSelection(double jetPtThreshold_, BTagger con
 
 
 bool GenericEventSelection::PassLeptonStep(vector<Lepton> const &tightLeptons,
- vector<Lepton> const &looseLeptons, EventID const &eventID) const
+ vector<Lepton> const &looseLeptons) const
 {
     // Both the tight leptons collection and the thresholds of each flavour are sorted in the
     //decreasing order in pt. The algorithm checks that nth lepton of a given flavour has a greater
@@ -74,8 +69,6 @@ bool GenericEventSelection::PassLeptonStep(vector<Lepton> const &tightLeptons,
     for (unsigned i = 0; i < 3; ++i)
         if (leptonThresholdIts.at(i) != leptonPtThresholds.at(i).cend())
             return false;
-    
-    eventCounter.AddEvent("step1", eventID);
     
     
     // Veto the additional loose leptons. Since they are required to include the tight leptons, it
