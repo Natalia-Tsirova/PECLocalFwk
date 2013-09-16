@@ -169,6 +169,12 @@ void Jet::SetParentID(int pdgID)
 }
 
 
+void Jet::SetPassPileUpID(bool passesPileUpID_)
+{
+    passesPileUpID = passesPileUpID_;
+}
+
+
 double Jet::CSV() const
 {
     return CSVValue;
@@ -190,4 +196,10 @@ double Jet::TCHP() const
 int Jet::GetParentID() const
 {
     return parentPDGID;
+}
+
+
+bool Jet::PassPileUpID() const
+{
+    return passesPileUpID;
 }

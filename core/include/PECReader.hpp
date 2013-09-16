@@ -354,6 +354,7 @@ class PECReader
         //Float_t jetJP[MAX_LEN];
         Int_t jetFlavour[MAX_LEN];
         Float_t jecUncertainty[MAX_LEN];
+        Int_t jetPileUpID[MAX_LEN];
         
         Float_t softJetPt;
         Float_t softJetEta;

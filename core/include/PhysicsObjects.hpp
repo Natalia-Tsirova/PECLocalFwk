@@ -138,6 +138,15 @@ class Jet: public Candidate
         /// Sets the parent's PDF ID
         void SetParentID(int pdgID);
         
+        /**
+         * \brief Says if the jet passes the hard-coded working point for pile-up ID
+         * 
+         * Note that this is a temporaty solution. Access to pile-up ID should be implemented in
+         * the similar fashion as b-tagging. But most likely we will not use pile-up ID, and this
+         * functionality will be dropped completely.
+         */
+        void SetPassPileUpID(bool passesPileUpID);
+        
         /// Gets the value of the CSV b-tagging discriminator
         double CSV() const;
         
@@ -149,10 +158,20 @@ class Jet: public Candidate
         
         /// Gets the parent's PDG ID
         int GetParentID() const;
+        
+        /**
+         * \brief Indicates whether the jet passes the hard-coded working point for pile-up ID
+         * 
+         * Note that this is a temporaty solution. Access to pile-up ID should be implemented in
+         * the similar fashion as b-tagging. But most likely we will not use pile-up ID, and this
+         * functionality will be dropped completely.
+         */
+        bool PassPileUpID() const;
     
     private:
         double CSVValue;   ///< CSV b-tagging discriminator
         double JPValue;    ///< JP b-tagging discriminator
         double TCHPValue;  ///< TCHP b-tagging discriminator
         int parentPDGID;  ///< PDG ID of the parent
+        bool passesPileUpID;  ///< Whether the jet passes pile-up ID
 };

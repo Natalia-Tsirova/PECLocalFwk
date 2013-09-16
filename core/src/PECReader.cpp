@@ -450,6 +450,8 @@ void PECReader::OpenSourceFile()
     generalTree->SetBranchAddress("jetTCHP", jetTCHP);
     //generalTree->SetBranchAddress("jetJP", jetJP);
     
+    generalTree->SetBranchAddress("jetPUFullID", jetPileUpID);
+    
     generalTree->SetBranchAddress("metSize", &metSize);
     generalTree->SetBranchAddress("metPt", metPt);
     generalTree->SetBranchAddress("metPhi", metPhi);
@@ -634,6 +636,10 @@ bool PECReader::BuildAndSelectEvent()
         Jet jet(p4);
         jet.SetCSV(jetCSV[i]);
         jet.SetTCHP(jetTCHP[i]);
+        
+        // Check for the loose working point of the full MVA ID. This is what is used in JME-13-005
+        //https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetID
+        jet.SetPassPileUpID(((jetPileUpID[i] & 4) == 4));
         
         if (dataset.IsMC())
             jet.SetParentID(jetFlavour[i]);
