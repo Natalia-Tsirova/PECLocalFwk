@@ -15,7 +15,7 @@ PECReaderConfig::PECReaderConfig(PECReaderConfig const &src):
     triggerSelection(src.triggerSelection->Clone()),
     eventSelection(src.eventSelection->Clone()),
     bTagger(src.bTagger),
-    bTagDatabase(new BTagDatabase(*src.bTagDatabase)),
+    bTagDatabase((src.bTagDatabase) ? new BTagDatabase(*src.bTagDatabase) : nullptr),
     puReweighter(src.puReweighter->Clone()),
     weightFilesLocation(src.weightFilesLocation),
     readHardInteraction(src.readHardInteraction),

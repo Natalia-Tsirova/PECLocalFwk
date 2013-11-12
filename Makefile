@@ -23,12 +23,14 @@ vpath %.cpp core/src:extensions/src
 all: libpecfwk.a libpecfwk.so
 
 libpecfwk.a: $(OBJECTS)
+	@ mkdir -p lib
 	@ rm -f lib/$@
 	@ ar -cq lib/$@ $+
 # '$@' is expanded to the target, '$+' expanded to all the dependencies. See
 # http://www.gnu.org/savannah-checkouts/gnu/make/manual/html_node/Automatic-Variables.html
 
 libpecfwk.so: $(OBJECTS)
+	@ mkdir -p lib
 	@ rm -f lib/$@
 	@ $(CC) -shared -Wl,-soname,$@.1 -o $@.1.0 $+
 	@ mv $@.1.0 lib/

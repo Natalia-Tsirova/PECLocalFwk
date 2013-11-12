@@ -44,7 +44,7 @@ int main()
     // th with exotic coupling
     datasets.emplace_back(Dataset::Process::thqExotic, Dataset::Generator::MadGraph,
      Dataset::ShowerGenerator::Pythia);
-    datasets.back().AddFile(filePrefix + "tqh-nc-mg_rev468_fPc.root", 21.5e-3, 499971);
+    datasets.back().AddFile(filePrefix + "tqh-nc-mg-v2_rev468_Goi.root", 34.1e-3, 499958);
     
      
     // Define the triggers
