@@ -9,6 +9,7 @@
 
 #include <TriggerSelectionInterface.hpp>
 #include <TriggerRange.hpp>
+#include <PECReader.hpp>
 
 #include <Rtypes.h>
 
@@ -276,6 +277,9 @@ class TriggerSelectionMC: public TriggerSelectionInterface
          * branches' addresses.
          */
         Bool_t *buffer;
+        
+        TFile *sf_file;
+        TH1D *hist_id, *hist_iso, *hist_trig;
 };
 
 

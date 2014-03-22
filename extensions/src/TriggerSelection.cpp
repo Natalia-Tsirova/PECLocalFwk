@@ -129,11 +129,27 @@ TriggerSelectionMC::TriggerSelectionMC(std::vector<TriggerRange const *> const &
     
     for (auto const &r: ranges_)
         ranges.emplace_back(r, nullptr);
+
+   TH1::AddDirectory(kFALSE);
+    
+
+    sf_file = new TFile("/afs/cern.ch/work/n/ntsirova/public/PECLocalFwk/data/Muon/muon_sf.root","read");
+    
+    //ROOTLock::Lock();
+    
+    // Delete the previous set of SFs
+    //delete hist_id;
+       
+    // Read new SFs
+    hist_id = dynamic_cast<TH1D *>(sf_file->Get("muon_id"));
+    hist_iso = dynamic_cast<TH1D *>(sf_file->Get("muon_iso"));
+    hist_trig = dynamic_cast<TH1D *>(sf_file->Get("muon_trig"));
 }
 
 
 TriggerSelectionMC::~TriggerSelectionMC()
 {
+    sf_file->Close();
     delete [] buffer;
 }
 
@@ -253,9 +269,20 @@ double TriggerSelectionMC::GetWeight(PECReader const &reader) const
 }
 
 
-double TriggerSelectionMC::ScaleFactor(TriggerRange const *, PECReader const &) const
+double TriggerSelectionMC::ScaleFactor(TriggerRange const *, PECReader const &reader) const
 {
-    return 1.;
+    if (reader.GetLeptons().size() != 1)
+        throw logic_error("There is not 1 lepton in the event.");
+    auto const lepton = reader.GetLeptons().at(0);
+    
+    double sf_id, sf_iso, sf_trig, sf;
+    sf_id = hist_id->GetBinContent(hist_id->FindFixBin(fabs(lepton.Eta())));
+    sf_iso = hist_iso->GetBinContent(hist_iso->FindFixBin(fabs(lepton.Eta())));
+    sf_trig = hist_trig->GetBinContent(hist_trig->FindFixBin(fabs(lepton.Eta())));
+    sf = sf_id * sf_iso * sf_trig;
+    
+    //cout << lepton.Eta() << ' ' << sf_id << ' ' << sf_iso << ' ' << sf_trig << ' ' << sf << endl;
+    return sf;
 }
 
 
