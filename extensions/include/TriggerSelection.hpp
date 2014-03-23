@@ -13,6 +13,8 @@
 
 #include <Rtypes.h>
 
+#include "TH1.h"
+
 #include <vector>
 #include <map>
 #include <memory>
