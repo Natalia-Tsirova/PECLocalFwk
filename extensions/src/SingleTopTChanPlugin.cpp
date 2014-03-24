@@ -8,30 +8,30 @@
 #include <TMatrixDSymEigen.h>
 
 #include <sys/stat.h>
-
+#include <iostream>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
 
-SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, BTagger const &bTagger_):
+SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, BTagger const &bTagger_, bool const isWeightSyst_):
     Plugin("SingleTop"),
-    bTagger(bTagger_), outDirectory(outDirectory_)
+    bTagger(bTagger_), outDirectory(outDirectory_), isWeightSyst(isWeightSyst_)
 {
     // Make sure the directory path ends with a slash
     if (outDirectory.back() != '/')
         outDirectory += '/';
     
     // Create the output directory if it does not exist
-    struct stat dirStat;
-    
-    if (stat(outDirectory.c_str(), &dirStat) != 0)  // the directory does not exist
-        mkdir(outDirectory.c_str(), 0755);
+    boost::filesystem::create_directories(outDirectory);
 }
 
 
 Plugin *SingleTopTChanPlugin::Clone() const
 {
-    return new SingleTopTChanPlugin(outDirectory, bTagger);
+    //return new SingleTopTChanPlugin(outDirectory, bTagger, syst);
+//return new SingleTopTChanPlugin(outDirectory, bTagger);
+return new SingleTopTChanPlugin(outDirectory, bTagger, isWeightSyst);
 }
 
 
@@ -62,9 +62,12 @@ void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
     
     tree->Branch("Pt_Lep", &Pt_Lep);
     tree->Branch("Eta_Lep", &Eta_Lep);
+    tree->Branch("RelIso_Lep", &RelIso_Lep);
+    tree->Branch("Charge_Lep", &Charge_Lep);
     tree->Branch("MET", &MET);
     tree->Branch("MtW", &MtW);
     tree->Branch("Phi_MET", &Phi_MET);
+    tree->Branch("DPhi_LepNu", &DPhi_LepNu);
     
     tree->Branch("Pt_J1", &Pt_J1);
     tree->Branch("Eta_J1", &Eta_J1);
@@ -73,23 +76,52 @@ void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
     tree->Branch("Pt_LJ", &Pt_LJ);
     tree->Branch("Eta_LJ", &Eta_LJ);
     tree->Branch("Pt_BJ1", &Pt_BJ1);
+    tree->Branch("Pt_BJ2", &Pt_BJ2);
     
     tree->Branch("M_J1J2", &M_J1J2);
     tree->Branch("DR_J1J2", &DR_J1J2);
     tree->Branch("Pt_J1J2", &Pt_J1J2);
     
+    tree->Branch("DR_LepJ1", &DR_LepJ1);
+    tree->Branch("DR_LepJ2", &DR_LepJ2);
+    tree->Branch("DPhi_LepJ1", &DPhi_LepJ1);
+    
+    tree->Branch("N_J", &N_J);
+    tree->Branch("N_BJ", &N_BJ);
+    tree->Branch("N_LJ", &N_LJ);
     tree->Branch("Ht", &Ht);
+    tree->Branch("Ht_J", &Ht_J);
+    tree->Branch("Ht_JNotBest", &Ht_JNotBest);
+    tree->Branch("M_J", &M_J);
+    tree->Branch("M_JNotBest", &M_JNotBest);
+    tree->Branch("Pt_JNotBest", &Pt_JNotBest);
     tree->Branch("M_JW", &M_JW);
     
     tree->Branch("Mtop_BJ1", &Mtop_BJ1);
+    tree->Branch("Mtop_BestJ", &Mtop_BestJ);
+    tree->Branch("Pttop_BJ1", &Pttop_BJ1);
     tree->Branch("Cos_LepLJ_BJ1", &Cos_LepLJ_BJ1);
+    tree->Branch("Cos_WLJ_BJ1", &Cos_WLJ_BJ1);
     
     tree->Branch("Sphericity", &Sphericity);
+    tree->Branch("Aplanarity", &Aplanarity);
+    tree->Branch("Planarity", &Planarity);
     
     tree->Branch("nPV", &nPV);
     
     if (dataset.IsMC())
+    {
         tree->Branch("weight", &weight);
+	if (isWeightSyst)
+	{
+	    tree->Branch("weight_PileUpUp", &weight_PileUpUp);
+	    tree->Branch("weight_PileUpDown", &weight_PileUpDown);
+	    tree->Branch("weight_TagRateUp", &weight_TagRateUp);
+	    tree->Branch("weight_TagRateDown", &weight_TagRateDown);
+	    tree->Branch("weight_MistagRateUp", &weight_MistagRateUp);
+	    tree->Branch("weight_MistagRateDown", &weight_MistagRateDown);
+	}
+    }
 }
 
 
@@ -112,11 +144,11 @@ void SingleTopTChanPlugin::EndRun()
 
 bool SingleTopTChanPlugin::ProcessEvent()
 {
+
     // Make sure the event contains reasonable physics objects
     if ((*reader)->GetLeptons().size() not_eq 1 or (*reader)->GetJets().size() < 2)
         return false;
-    
-    
+ 
     // Save event ID
     auto const &eventID = (*reader)->GetEventID();
     runNumber = eventID.Run();
@@ -129,19 +161,24 @@ bool SingleTopTChanPlugin::ProcessEvent()
     auto const &jets = (*reader)->GetJets();
     auto const &met = (*reader)->GetMET();
     
-    
     // Calculate lepton-only variables
     Pt_Lep = lepton.Pt();
     Eta_Lep = lepton.Eta();
+    RelIso_Lep = lepton.RelIso();
+    Charge_Lep = lepton.Charge();
     MET = met.Pt();
     Phi_MET = met.Phi();
+    DPhi_LepNu = fabs(lepton.Phi() - met.Phi());
+    if (DPhi_LepNu > M_PI)
+        DPhi_LepNu = 2 * M_PI - DPhi_LepNu;
     
     MtW = sqrt(pow(lepton.Pt() + met.Pt(), 2) - pow(lepton.P4().Px() + met.P4().Px(), 2) -
      pow(lepton.P4().Py() + met.P4().Py(), 2));
     
-    
-    // Find the light-flavour jet and the hardest b-jet
+    // Find the light-flavour jet, the hardest b-jet and second b-jet
     unsigned index = 0;
+    int b2jetIndex = -1;
+    N_BJ = 0; //the first assumption
     Eta_LJ = 0.;
     
     for (unsigned i = 0; i < jets.size(); ++i)
@@ -150,28 +187,44 @@ bool SingleTopTChanPlugin::ProcessEvent()
             index = i;
             Eta_LJ = jets.at(i).Eta();
         }
-    
     auto const &lJet = jets.at(index);
     
+    //Find the first b-jet
     for (index = 0; index < jets.size(); ++index)
         if (bTagger(jets.at(index)))
+        {
+            ++N_BJ;
             break;
-    
-    if (index == jets.size())  // there are no tagged jets
-    {
-        index = 0;
-        double maxCSV = -100.;
-        
-        for (unsigned i = 0; i < jets.size(); ++i)
-            if (jets.at(i).CSV() > maxCSV)
-            {
-                index = i;
-                maxCSV = jets.at(i).CSV();
-            }
-    }
-    
+        }
     auto const &bJet = jets.at(index);
     
+    //Find the second b-jet if exists
+    for (++index; index < jets.size(); ++index)
+    {
+        if (bTagger(jets.at(index)))
+        {
+            b2jetIndex = index;
+            ++N_BJ;
+            break;        
+        }
+    }
+    
+    // Find the best jet (the best for the top reconstruction)
+    
+    double massDelta = fabs((lepton.P4() + met.P4() + jets.at(0).P4()).M() - 172.5);
+    unsigned bestJetIndex = 0;
+    
+    for (unsigned i = 1; i < jets.size(); ++i)
+    {
+         double massDeltaCand = fabs((lepton.P4() + met.P4() + jets.at(0).P4()).M() - 172.5);
+         if (massDeltaCand < massDelta)
+         {
+             bestJetIndex = i;
+             massDelta = massDeltaCand;
+         }
+    }
+    
+    auto const &bestJet = jets.at(bestJetIndex);
     
     // Calculate single-jet variables
     Pt_J1 = jets.at(0).Pt();
@@ -181,6 +234,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     Pt_BJ1 = bJet.Pt();
     Pt_LJ = lJet.Pt();
     
+    Pt_BJ2 = (b2jetIndex != -1) ? jets.at(b2jetIndex).Pt() : 1.;
     
     // Calculate dijet variables
     M_J1J2 = (jets.at(0).P4() + jets.at(1).P4()).M();
@@ -189,21 +243,40 @@ bool SingleTopTChanPlugin::ProcessEvent()
     
     
     // Calculate multi-jet variables
+    N_J = jets.size();
+    N_LJ = N_J - N_BJ;
+    
     TLorentzVector p4Jets;
+    Ht_J = 0.;
     Ht = 0.;
     
     for (auto const &j: jets)
     {
         p4Jets += j.P4();
+        Ht_J += j.Pt();
         Ht += j.Pt();
     }
     
     for (auto const &j: (*reader)->GetAdditionalJets())
     {
         p4Jets += j.P4();
+        Ht_J += j.Pt();
         Ht += j.Pt();
     }
     
+    Ht_JNotBest = Ht_J - bestJet.Pt();
+    M_J = p4Jets.M();
+    M_JNotBest = (N_J > 2) ? (p4Jets - bestJet.P4()).M() : 1.;
+    Pt_JNotBest = (p4Jets - bestJet.P4()).Pt();
+    
+    // Calculate lepton-jet variables
+    Ht += lepton.Pt();
+    Ht += met.Pt();
+    DR_LepJ1 = lepton.P4().DeltaR(jets.at(0).P4());
+    DR_LepJ2 = lepton.P4().DeltaR(jets.at(1).P4());
+    DPhi_LepJ1 = fabs(lepton.Phi() - jets.at(0).Phi());
+    if (DPhi_LepJ1 > M_PI)
+        DPhi_LepJ1 = 2 * M_PI - DPhi_LepJ1;
     
     // Reconstruct W-boson
     TLorentzVector const p4W((*reader)->GetNeutrino().P4() + lepton.P4());
@@ -212,9 +285,12 @@ bool SingleTopTChanPlugin::ProcessEvent()
     
     
     // Reconstruct the top-quark
-    TLorentzVector const p4Top(p4W + bJet.P4());
+    TLorentzVector const p4Top(p4W + bJet.P4()); //with BJ1
+    TLorentzVector const p4Top_Best(p4W + bestJet.P4()); //with BestJet
     
     Mtop_BJ1 = p4Top.M();
+    Pttop_BJ1 = p4Top.Pt();
+    Mtop_BestJ = p4Top_Best.M();
     
     
     // Calculate cos(theta)
@@ -229,6 +305,12 @@ bool SingleTopTChanPlugin::ProcessEvent()
     TVector3 const p3LJet(boostedLJet.Vect());
     
     Cos_LepLJ_BJ1 = p3Lepton.Dot(p3LJet) / (p3Lepton.Mag() * p3LJet.Mag());
+    
+    // cos(theta) a la arXiv:1208.6006
+    TLorentzVector boostedW = p4W;
+    boostedW.Boost(-b);
+    TVector3 p3W(boostedW.Vect());
+    Cos_WLJ_BJ1 = p3W.Dot(p3LJet) / (p3W.Mag() * p3LJet.Mag());
     
     
     // Calculate sphericity
@@ -258,7 +340,8 @@ bool SingleTopTChanPlugin::ProcessEvent()
     TVectorD eigenVals(eigenValCalc.GetEigenValues());
     
     Sphericity = 1.5 * (eigenVals[1] + eigenVals[2]);
-    
+    Aplanarity = 1.5 * eigenVals[2];
+    Planarity = eigenVals[1] - eigenVals[2];
     
     // Number of reconstructed primary vertices
     nPV = (*reader)->GetNPrimaryVertices();
@@ -266,7 +349,20 @@ bool SingleTopTChanPlugin::ProcessEvent()
     
     // Event weight
     weight = (*reader)->GetCentralWeight();
-    
+
+    if (isWeightSyst)
+    {
+	vector<WeightPair> const weights_PileUp = (*reader)->GetSystWeight(SystTypeWeight::PileUp);
+	vector<WeightPair> const weights_TagRate = (*reader)->GetSystWeight(SystTypeWeight::TagRate);
+	vector<WeightPair> const weights_MistagRate = (*reader)->GetSystWeight(SystTypeWeight::MistagRate);
+	
+	weight_PileUpUp = weights_PileUp.at(0).up;
+	weight_PileUpDown = weights_PileUp.at(0).down;
+	weight_TagRateUp = weights_TagRate.at(0).up;
+	weight_TagRateDown = weights_TagRate.at(0).down;
+	weight_MistagRateUp = weights_MistagRate.at(0).up;
+	weight_MistagRateDown = weights_MistagRate.at(0).down;
+    }
     
     tree->Fill();
     return true;

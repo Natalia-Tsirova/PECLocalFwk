@@ -12,6 +12,7 @@
 
 #include <PECReaderPlugin.hpp>
 #include <BTagger.hpp>
+//#include <SystDefinition.hpp>
 
 #include <TFile.h>
 #include <TTree.h>
@@ -29,7 +30,9 @@ class SingleTopTChanPlugin: public Plugin
 {
     public:
         /// Constructor
-        SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger);
+        //SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger, SystTypeAlgo const &syst);
+	//SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger);
+SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger, bool const isWeightSyst);
     
     public:
         /**
@@ -69,6 +72,10 @@ class SingleTopTChanPlugin: public Plugin
         
         /// Directory to store output files
         std::string outDirectory;
+
+	/// Systematics
+	//SystTypeAlgo const &syst;
+	bool const isWeightSyst;
         
         /// Current output file
         TFile *file;
@@ -79,24 +86,29 @@ class SingleTopTChanPlugin: public Plugin
         // Output buffers
         ULong64_t eventNumber, runNumber, lumiSection;
         
-        Float_t Pt_Lep, Eta_Lep;
+        Float_t Pt_Lep, Eta_Lep, RelIso_Lep;
         Float_t MET, MtW;
-        Float_t Phi_MET;
+        Float_t Phi_MET, DPhi_LepNu;
         
         Float_t Pt_J1, Eta_J1, Pt_J2, Eta_J2;
         Float_t Pt_LJ, Eta_LJ;
-        Float_t Pt_BJ1;
+        Float_t Pt_BJ1, Pt_BJ2;
         
         Float_t M_J1J2, DR_J1J2, Pt_J1J2;
         
-        Float_t Ht;
+        Float_t DR_LepJ1, DR_LepJ2, DPhi_LepJ1;
+        
+        Int_t N_J, N_BJ, N_LJ, Charge_Lep;
+        
+        Float_t Ht, Ht_J, Ht_JNotBest, M_J, M_JNotBest, Pt_JNotBest;
         Float_t M_JW;
         
-        Float_t Mtop_BJ1;
-        Float_t Cos_LepLJ_BJ1;
+        Float_t Mtop_BJ1, Mtop_BestJ, Pttop_BJ1;
+        Float_t Cos_LepLJ_BJ1, Cos_WLJ_BJ1;
         
-        Float_t Sphericity;
+        Float_t Sphericity, Planarity, Aplanarity;
         
         Int_t nPV;
-        Float_t weight;
+        Float_t weight, weight_PileUpUp, weight_PileUpDown;
+	Float_t weight_TagRateUp, weight_TagRateDown, weight_MistagRateUp, weight_MistagRateDown;
 };
