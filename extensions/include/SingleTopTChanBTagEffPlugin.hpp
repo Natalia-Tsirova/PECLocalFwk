@@ -13,6 +13,7 @@
 #include <PECReaderPlugin.hpp>
 
 #include <TFile.h>
+#include "TH2.h"
 #include <TTree.h>
 
 #include <string>
