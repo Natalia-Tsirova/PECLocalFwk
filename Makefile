@@ -29,7 +29,7 @@ BOOST_LIB = $(BOOST_ROOT)/lib
 # Define the flags to control make
 CC = g++
 INCLUDE = -Icore/include -Iextensions/include -I$(shell root-config --incdir) -I$(BOOST_INCLUDE)
-OPFLAGS = -O2
+OPFLAGS = -O
 CFLAGS = -Wall -Wextra -fPIC -std=c++11 $(INCLUDE) $(OPFLAGS)
 #LDFLAGS = $(shell root-config --libs) -lTreePlayer -lHistPainter \
 # -L$(BOOST_LIB) -lboost_filesystem$(BOOST_LIB_POSTFIX) $(PEC_FWK_INSTALL)/lib/libpecfwk.a \

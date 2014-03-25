@@ -14,7 +14,7 @@
 using namespace std;
 
 
-SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, BTagger const &bTagger_, bool const isWeightSyst_):
+SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, std::shared_ptr<BTagger const> &bTagger_, bool const isWeightSyst_):
     Plugin("SingleTop"),
     bTagger(bTagger_), outDirectory(outDirectory_), isWeightSyst(isWeightSyst_)
 {
@@ -31,7 +31,8 @@ Plugin *SingleTopTChanPlugin::Clone() const
 {
     //return new SingleTopTChanPlugin(outDirectory, bTagger, syst);
 //return new SingleTopTChanPlugin(outDirectory, bTagger);
-return new SingleTopTChanPlugin(outDirectory, bTagger, isWeightSyst);
+//return new SingleTopTChanPlugin(outDirectory, bTagger, isWeightSyst);
+    return new SingleTopTChanPlugin(*this);
 }
 
 
@@ -182,7 +183,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     Eta_LJ = 0.;
     
     for (unsigned i = 0; i < jets.size(); ++i)
-        if (not bTagger(jets.at(i)) and fabs(jets.at(i).Eta()) > fabs(Eta_LJ))
+        if (not (*bTagger)(jets.at(i)) and fabs(jets.at(i).Eta()) > fabs(Eta_LJ))
         {
             index = i;
             Eta_LJ = jets.at(i).Eta();
@@ -191,7 +192,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     
     //Find the first b-jet
     for (index = 0; index < jets.size(); ++index)
-        if (bTagger(jets.at(index)))
+        if ((*bTagger)(jets.at(index)))
         {
             ++N_BJ;
             break;
@@ -201,7 +202,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     //Find the second b-jet if exists
     for (++index; index < jets.size(); ++index)
     {
-        if (bTagger(jets.at(index)))
+        if ((*bTagger)(jets.at(index)))
         {
             b2jetIndex = index;
             ++N_BJ;

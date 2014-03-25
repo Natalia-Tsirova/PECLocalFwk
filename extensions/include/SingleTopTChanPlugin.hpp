@@ -18,6 +18,7 @@
 #include <TTree.h>
 
 #include <string>
+#include <memory>
 
 
 /**
@@ -32,7 +33,7 @@ class SingleTopTChanPlugin: public Plugin
         /// Constructor
         //SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger, SystTypeAlgo const &syst);
 	//SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger);
-SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger, bool const isWeightSyst);
+SingleTopTChanPlugin(std::string const &outDirectory, std::shared_ptr<BTagger const> &bTagger, bool const isWeightSyst);
     
     public:
         /**
@@ -68,7 +69,7 @@ SingleTopTChanPlugin(std::string const &outDirectory, BTagger const &bTagger, bo
         PECReaderPlugin const *reader;
         
         /// An object to perform b-tagging
-        BTagger const &bTagger;
+        std::shared_ptr<BTagger const> bTagger;
         
         /// Directory to store output files
         std::string outDirectory;
