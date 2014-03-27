@@ -69,7 +69,7 @@ bool WjetsHFPlugin::ProcessEvent()
         for (GenParticle const &p: (*reader)->GetHardGenParticles())
         {
             ++i;
-            if (i>2) //for outgoing particles
+            if (i>4) //for outgoing particles
             {
                 if (p.GetPdgId() == 4) ++n_c_me_out;
                 if (p.GetPdgId() == -4) ++n_cbar_me_out;
