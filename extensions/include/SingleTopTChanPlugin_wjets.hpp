@@ -1,6 +1,6 @@
 /**
- * \file SingleTopTChanPlugin_zerotag.hpp
- * \author Andrey Popov
+ * \file SingleTopTChanPlugin_wjets.hpp
+ * \author Andrey Popov, Natalia Tsirova
  * 
  * The module defines a class to calculate a set of variables that are used in single-top t-channel
  * analysis.
@@ -11,6 +11,7 @@
 #include <Plugin.hpp>
 
 #include <PECReaderPlugin.hpp>
+#include <WjetsHFPlugin.hpp>
 #include <BTagger.hpp>
 //#include <SystDefinition.hpp>
 
@@ -22,17 +23,16 @@
 
 
 /**
- * \class SingleTopTChanPlugin_zerotag
+ * \class SingleTopTChanPlugin_wjets
  * \brief Calculates and stores variables that are used in single-top t-channel analysis
  * 
  * The class is expected to serve as an illustration rather than to be used in a real-life analysis.
  */
-class SingleTopTChanPlugin_zerotag: public Plugin
+class SingleTopTChanPlugin_wjets: public Plugin
 {
     public:
         /// Constructor
- 
-SingleTopTChanPlugin_zerotag(std::string const &outDirectory, std::shared_ptr<BTagger const> &bTagger, bool const isWeightSyst);
+        SingleTopTChanPlugin_wjets(std::string const &outDirectory, std::shared_ptr<BTagger const> &bTagger, bool const isWeightSyst, std::string const hftype_str);
     
     public:
         /**
@@ -67,15 +67,24 @@ SingleTopTChanPlugin_zerotag(std::string const &outDirectory, std::shared_ptr<BT
         /// Pointer to PECReaderPlugin
         PECReaderPlugin const *reader;
         
+        /// Pointer to a plugin for ttbar classification
+        WjetsHFPlugin const *WjetsHFClassifier;
+        
         /// An object to perform b-tagging
         std::shared_ptr<BTagger const> bTagger;
         
         /// Directory to store output files
         std::string outDirectory;
 
+
+
 	/// Systematics
 	//SystTypeAlgo const &syst;
 	bool const isWeightSyst;
+	
+	/// heavy flavour type
+        WjetsHFPlugin::Type hftype;
+        std::string const hftype_str;
         
         /// Current output file
         TFile *file;
@@ -110,7 +119,7 @@ SingleTopTChanPlugin_zerotag(std::string const &outDirectory, std::shared_ptr<BT
         
         Float_t Sphericity, Planarity, Aplanarity;
         
-        Int_t nPV;
+        Int_t nPV, WHFClass;
         Float_t weight, weight_PileUpUp, weight_PileUpDown;
 	Float_t weight_TagRateUp, weight_TagRateDown, weight_MistagRateUp, weight_MistagRateDown;
 };

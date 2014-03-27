@@ -1,4 +1,4 @@
-#include <SingleTopTChanPlugin.hpp>
+#include <SingleTopTChanPlugin_wjets.hpp>
 
 #include <Processor.hpp>
 #include <ROOTLock.hpp>
@@ -14,9 +14,9 @@
 using namespace std;
 
 
-SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, std::shared_ptr<BTagger const> &bTagger_, bool const isWeightSyst_):
+SingleTopTChanPlugin_wjets::SingleTopTChanPlugin_wjets(string const &outDirectory_, std::shared_ptr<BTagger const> &bTagger_, bool const isWeightSyst_, string const hftype_str_):
     Plugin("SingleTop"),
-    bTagger(bTagger_), outDirectory(outDirectory_), isWeightSyst(isWeightSyst_)
+    bTagger(bTagger_), outDirectory(outDirectory_), isWeightSyst(isWeightSyst_), hftype_str(hftype_str_)
 {
     // Make sure the directory path ends with a slash
     if (outDirectory.back() != '/')
@@ -24,28 +24,37 @@ SingleTopTChanPlugin::SingleTopTChanPlugin(string const &outDirectory_, std::sha
     
     // Create the output directory if it does not exist
     boost::filesystem::create_directories(outDirectory);
+    
+    // Convert hftype_str to WjetsHF Type
+    if (hftype_str == "W_qq") hftype = WjetsHFPlugin::Type::W_qq;
+    else if (hftype_str == "W_c") hftype = WjetsHFPlugin::Type::W_c;
+    else if (hftype_str == "W_other") hftype = WjetsHFPlugin::Type::W_other;
+    else if (hftype_str == "W_light") hftype = WjetsHFPlugin::Type::W_light;
+    else throw runtime_error("SingleTopTChanPlugin_wjets: Undefined heavy flavour type = " + hftype_str);
 }
 
 
-Plugin *SingleTopTChanPlugin::Clone() const
+Plugin *SingleTopTChanPlugin_wjets::Clone() const
 {
-    //return new SingleTopTChanPlugin(outDirectory, bTagger, syst);
-//return new SingleTopTChanPlugin(outDirectory, bTagger);
-//return new SingleTopTChanPlugin(outDirectory, bTagger, isWeightSyst);
-    return new SingleTopTChanPlugin(*this);
+    //return new SingleTopTChanPlugin_wjets(outDirectory, bTagger, syst);
+//return new SingleTopTChanPlugin_wjets(outDirectory, bTagger);
+//return new SingleTopTChanPlugin_wjets(outDirectory, bTagger, isWeightSyst);
+    return new SingleTopTChanPlugin_wjets(*this);
 }
 
 
-void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
+void SingleTopTChanPlugin_wjets::BeginRun(Dataset const &dataset)
 {
     // Save pointers to plugins
-    reader = dynamic_cast<PECReaderPlugin const *>(processor->GetPluginBefore("Reader", name));    
+    reader = dynamic_cast<PECReaderPlugin const *>(processor->GetPluginBefore("Reader", name));
+    WjetsHFClassifier = dynamic_cast<WjetsHFPlugin const *>(processor->GetPluginBefore("WjetsHF", name));
+    
     
     // Creation of ROOT objects is not thread-safe and must be protected
     ROOTLock::Lock();
     
     // Create the output file
-    file = new TFile((outDirectory + dataset.GetFiles().front().GetBaseName() + ".root").c_str(),
+    file = new TFile((outDirectory + dataset.GetFiles().front().GetBaseName() + "_" + hftype_str + ".root").c_str(),
      "recreate");
     
     // Create the tree
@@ -115,6 +124,7 @@ void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
     if (dataset.IsMC())
     {
         tree->Branch("weight", &weight);
+        tree->Branch("WHFClass", &WHFClass);
         if (isWeightSyst)
 	{
 	    tree->Branch("weight_PileUpUp", &weight_PileUpUp);
@@ -128,7 +138,7 @@ void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
 }
 
 
-void SingleTopTChanPlugin::EndRun()
+void SingleTopTChanPlugin_wjets::EndRun()
 {
     // Operations with ROOT objects performed here are not thread-safe and must be guarded
     ROOTLock::Lock();
@@ -145,8 +155,12 @@ void SingleTopTChanPlugin::EndRun()
 }
 
 
-bool SingleTopTChanPlugin::ProcessEvent()
+bool SingleTopTChanPlugin_wjets::ProcessEvent()
 {
+    // Classify the Wjets event
+    if (WjetsHFClassifier->GetDecision() != hftype) return false;
+    
+    WHFClass = int(WjetsHFClassifier->GetDecision());    
 
     // Make sure the event contains reasonable physics objects
     if ((*reader)->GetLeptons().size() not_eq 1 or (*reader)->GetJets().size() < 2)
@@ -287,6 +301,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     M_JW = (p4W + p4Jets).M();
     Pt_W = p4W.Pt();
     
+    
     // Reconstruct the top-quark
     TLorentzVector const p4Top(p4W + bJet.P4()); //with BJ1
     TLorentzVector const p4Top_Best(p4W + bestJet.P4()); //with BestJet
@@ -320,7 +335,6 @@ bool SingleTopTChanPlugin::ProcessEvent()
     TVector3 p3Jet = jets.at(0).P4().Vect();
     Cos_LepJ1 = p3Lepton.Dot(p3Jet) / (p3Lepton.Mag() * p3Jet.Mag());
     
-    
     // Calculate sphericity
     TMatrixDSym sphericityTensor(3);
     double norm = 0.;
@@ -352,7 +366,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     Planarity = eigenVals[1] - eigenVals[2];
     
     // Number of reconstructed primary vertices
-    nPV = (*reader)->GetNPrimaryVertices();    
+    nPV = (*reader)->GetNPrimaryVertices();
     
     // Event weight
     weight = (*reader)->GetCentralWeight();

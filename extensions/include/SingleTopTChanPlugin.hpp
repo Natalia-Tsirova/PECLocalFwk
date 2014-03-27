@@ -107,6 +107,8 @@ SingleTopTChanPlugin(std::string const &outDirectory, std::shared_ptr<BTagger co
         Float_t Mtop_BJ1, Mtop_BestJ, Pttop_BJ1;
         Float_t Cos_LepLJ_BJ1, Cos_WLJ_BJ1;
         
+        Float_t Ht_J1J2, Pt_W, Cos_LepJ1;
+        
         Float_t Sphericity, Planarity, Aplanarity;
         
         Int_t nPV;

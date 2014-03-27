@@ -82,6 +82,7 @@ void SingleTopTChanPlugin_zerotag::BeginRun(Dataset const &dataset)
     tree->Branch("M_J1J2", &M_J1J2);
     tree->Branch("DR_J1J2", &DR_J1J2);
     tree->Branch("Pt_J1J2", &Pt_J1J2);
+    tree->Branch("Ht_J1J2", &Ht_J1J2);
     
     tree->Branch("DR_LepJ1", &DR_LepJ1);
     tree->Branch("DR_LepJ2", &DR_LepJ2);
@@ -97,12 +98,14 @@ void SingleTopTChanPlugin_zerotag::BeginRun(Dataset const &dataset)
     tree->Branch("M_JNotBest", &M_JNotBest);
     tree->Branch("Pt_JNotBest", &Pt_JNotBest);
     tree->Branch("M_JW", &M_JW);
+    tree->Branch("Pt_W", &Pt_W);
     
     tree->Branch("Mtop_BJ1", &Mtop_BJ1);
     tree->Branch("Mtop_BestJ", &Mtop_BestJ);
     tree->Branch("Pttop_BJ1", &Pttop_BJ1);
     tree->Branch("Cos_LepLJ_BJ1", &Cos_LepLJ_BJ1);
     tree->Branch("Cos_WLJ_BJ1", &Cos_WLJ_BJ1);
+    tree->Branch("Cos_LepJ1", &Cos_LepJ1);
     
     tree->Branch("Sphericity", &Sphericity);
     tree->Branch("Aplanarity", &Aplanarity);
@@ -242,6 +245,7 @@ bool SingleTopTChanPlugin_zerotag::ProcessEvent()
     M_J1J2 = (jets.at(0).P4() + jets.at(1).P4()).M();
     DR_J1J2 = jets.at(0).P4().DeltaR(jets.at(1).P4());
     Pt_J1J2 = (jets.at(0).P4() + jets.at(1).P4()).Pt();
+    Ht_J1J2 = jets.at(0).P4().Pt() + jets.at(1).P4().Pt();
     
     
     // Calculate multi-jet variables
@@ -284,6 +288,7 @@ bool SingleTopTChanPlugin_zerotag::ProcessEvent()
     TLorentzVector const p4W((*reader)->GetNeutrino().P4() + lepton.P4());
     
     M_JW = (p4W + p4Jets).M();
+    Pt_W = p4W.Pt();
     
     
     // Reconstruct the top-quark
@@ -300,7 +305,7 @@ bool SingleTopTChanPlugin_zerotag::ProcessEvent()
     
     TLorentzVector boostedLepton(lepton.P4());
     boostedLepton.Boost(-b);
-    TVector3 const p3Lepton(boostedLepton.Vect());
+    TVector3 p3Lepton(boostedLepton.Vect());
     
     TLorentzVector boostedLJet(lJet.P4());
     boostedLJet.Boost(-b);
@@ -313,7 +318,11 @@ bool SingleTopTChanPlugin_zerotag::ProcessEvent()
     boostedW.Boost(-b);
     TVector3 p3W(boostedW.Vect());
     Cos_WLJ_BJ1 = p3W.Dot(p3LJet) / (p3W.Mag() * p3LJet.Mag());
-    
+ 
+    // cos(lepton, J1)_Lab
+    p3Lepton = lepton.P4().Vect();
+    TVector3 p3Jet = jets.at(0).P4().Vect();
+    Cos_LepJ1 = p3Lepton.Dot(p3Jet) / (p3Lepton.Mag() * p3Jet.Mag());    
     
     // Calculate sphericity
     TMatrixDSym sphericityTensor(3);
