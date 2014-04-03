@@ -99,12 +99,20 @@ void SingleTopTChanPlugin::BeginRun(Dataset const &dataset)
     tree->Branch("M_JW", &M_JW);
     tree->Branch("Pt_W", &Pt_W);
     
+    tree->Branch("DPhi_LepW", &DPhi_LepW);
+    tree->Branch("DPhi_LepBJ1", &DPhi_LepBJ1);
+    tree->Branch("DPhi_WNu", &DPhi_WNu);
+    tree->Branch("DPhi_WBJ1", &DPhi_WBJ1);
+    tree->Branch("DR_LepBJ1", &DR_LepBJ1);
+    tree->Branch("DR_WBJ1", &DR_WBJ1);
+    
     tree->Branch("Mtop_BJ1", &Mtop_BJ1);
     tree->Branch("Mtop_BestJ", &Mtop_BestJ);
     tree->Branch("Pttop_BJ1", &Pttop_BJ1);
     tree->Branch("Cos_LepLJ_BJ1", &Cos_LepLJ_BJ1);
     tree->Branch("Cos_WLJ_BJ1", &Cos_WLJ_BJ1);
     tree->Branch("Cos_LepJ1", &Cos_LepJ1);
+    tree->Branch("Cos_LepW_W", &Cos_LepW_W);
     
     tree->Branch("Sphericity", &Sphericity);
     tree->Branch("Aplanarity", &Aplanarity);
@@ -277,6 +285,7 @@ bool SingleTopTChanPlugin::ProcessEvent()
     Ht += met.Pt();
     DR_LepJ1 = lepton.P4().DeltaR(jets.at(0).P4());
     DR_LepJ2 = lepton.P4().DeltaR(jets.at(1).P4());
+    DR_LepBJ1 = lepton.P4().DeltaR(bJet.P4());
     DPhi_LepJ1 = fabs(lepton.Phi() - jets.at(0).Phi());
     if (DPhi_LepJ1 > M_PI)
         DPhi_LepJ1 = 2 * M_PI - DPhi_LepJ1;
@@ -286,6 +295,24 @@ bool SingleTopTChanPlugin::ProcessEvent()
     
     M_JW = (p4W + p4Jets).M();
     Pt_W = p4W.Pt();
+    
+    DPhi_LepW = fabs(lepton.Phi() - p4W.Phi());
+    if (DPhi_LepW > M_PI)
+        DPhi_LepW = 2 * M_PI - DPhi_LepW;
+    
+    DPhi_WNu = fabs(p4W.Phi() - met.Phi());
+    if (DPhi_WNu > M_PI)
+        DPhi_WNu = 2 * M_PI - DPhi_WNu;
+    
+    DPhi_WBJ1 = fabs(p4W.Phi() - bJet.Phi());
+    if (DPhi_WBJ1 > M_PI)
+        DPhi_WBJ1 = 2 * M_PI - DPhi_WBJ1;
+    
+    DPhi_LepBJ1 = fabs(lepton.Phi() - bJet.Phi());
+    if (DPhi_LepBJ1 > M_PI)
+        DPhi_LepBJ1 = 2 * M_PI - DPhi_LepBJ1;
+    
+    DR_WBJ1 = p4W.DeltaR(bJet.P4());
     
     // Reconstruct the top-quark
     TLorentzVector const p4Top(p4W + bJet.P4()); //with BJ1
@@ -314,6 +341,13 @@ bool SingleTopTChanPlugin::ProcessEvent()
     boostedW.Boost(-b);
     TVector3 p3W(boostedW.Vect());
     Cos_WLJ_BJ1 = p3W.Dot(p3LJet) / (p3W.Mag() * p3LJet.Mag());
+    
+    // cos(theta*) a la arXiv:1208.6006
+    b = p4W.BoostVector();
+    boostedLepton = lepton.P4();
+    boostedLepton.Boost(-b);
+    p3Lepton = boostedLepton.Vect();
+    Cos_LepW_W = p3Lepton.Dot(-b) / (p3Lepton.Mag() * b.Mag());
     
     // cos(lepton, J1)_Lab
     p3Lepton = lepton.P4().Vect();
