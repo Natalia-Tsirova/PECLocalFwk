@@ -256,6 +256,26 @@ double PECReader::GetCentralWeight() const
     return weightCentral;
 }
 
+double PECReader::GetXSecWeight() const
+{
+    return weightCrossSection;
+}
+
+double PECReader::GetBTagWeight() const
+{
+    return weightBTag;
+}
+
+double PECReader::GetTriggerWeight() const
+{
+    return weightTrigger;
+}
+
+double PECReader::GetPUWeight() const
+{
+    return weightPU;
+}
+
 
 vector<WeightPair> const &PECReader::GetSystWeight(SystTypeWeight type) const
 {
@@ -776,7 +796,7 @@ void PECReader::CalculateEventWeights()
     // Calculate weight due to trigger selection. This is the only event weight that can make
     //sense for real data (e.g. if there is an additional selection specified in a TriggerRange
     //object). However, with real data this weight is either 0. or 1.
-    double const weightTrigger = (triggerSelection) ? triggerSelection->GetWeight(*this) : 1.;
+    weightTrigger = (triggerSelection) ? triggerSelection->GetWeight(*this) : 1.;
     
     if (not dataset.IsMC())
     {
@@ -797,13 +817,14 @@ void PECReader::CalculateEventWeights()
     
     
     // Reweighting for b-tagging
-    double const weightBTagging =
+    weightBTag =
      (bTagReweighter) ?
      bTagReweighter->CalcWeight(goodJets, WeightBTagInterface::Variation::Nominal) : 1.;
     
+    weightPU = weightPileUp.central;
     
     // Calculate the central weight
-    weightCentral = weightCrossSection * weightTrigger * weightPileUp.central * weightBTagging;
+    weightCentral = weightCrossSection * weightTrigger * weightPileUp.central * weightBTag;
     
     
     // Clear vectors with varied weights
@@ -822,7 +843,7 @@ void PECReader::CalculateEventWeights()
     
     if (syst.type == SystTypeAlgo::WeightOnly and bTagReweighter)
     {
-        double const weightButBTagging = weightCentral / weightBTagging;
+        double const weightButBTagging = weightCentral / weightBTag;
         
         systWeightTagRate.emplace_back();
         systWeightTagRate.back().up = weightButBTagging *

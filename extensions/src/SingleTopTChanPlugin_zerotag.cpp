@@ -124,6 +124,11 @@ void SingleTopTChanPlugin_zerotag::BeginRun(Dataset const &dataset)
     if (dataset.IsMC())
     {
         tree->Branch("weight", &weight);
+        tree->Branch("weight_xsec", &weight_xsec);
+        tree->Branch("weight_btag", &weight_btag);
+        tree->Branch("weight_pu", &weight_pu);
+        tree->Branch("weight_trig", &weight_trig);
+        
 	if (isWeightSyst)
 	{
 	    tree->Branch("weight_PileUpUp", &weight_PileUpUp);
@@ -393,6 +398,10 @@ bool SingleTopTChanPlugin_zerotag::ProcessEvent()
     
     // Event weight
     weight = (*reader)->GetCentralWeight();
+    weight_xsec = (*reader)->GetXSecWeight();
+    weight_btag = (*reader)->GetBTagWeight();
+    weight_pu = (*reader)->GetPUWeight();
+    weight_trig = (*reader)->GetTriggerWeight();
 
     if (isWeightSyst)
     {

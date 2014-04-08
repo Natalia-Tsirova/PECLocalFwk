@@ -226,6 +226,30 @@ public:
     double GetCentralWeight() const;
     
     /**
+     * \brief Returns the XSec weight for the current event
+     * 
+     */
+    double GetXSecWeight() const;
+    
+    /**
+     * \brief Returns the btag weight for the current event
+     * 
+     */
+    double GetBTagWeight() const;
+    
+    /**
+     * \brief Returns the trigger weight for the current event
+     * 
+     */
+    double GetTriggerWeight() const;
+    
+    /**
+     * \brief Returns the PU weight for the current event
+     * 
+     */
+    double GetPUWeight() const;
+    
+    /**
      * \brief Returns systematical variations of event weight for a specified source
      * 
      * For most of uncertainty sources the vector contains a single pair, but for some types
@@ -340,6 +364,15 @@ private:
     
     /// Weight due to cross-section
     double weightCrossSection;
+    
+    /// Weight due to btag
+    double weightBTag;
+    
+    /// Weight due to trigger
+    double weightTrigger;
+    
+    /// Weight due to PU
+    double weightPU;
     
     /// Systematical variations in event weight due to uncertainty in pile-up
     std::vector<WeightPair> systWeightPileUp;

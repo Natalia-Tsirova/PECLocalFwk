@@ -117,4 +117,6 @@ SingleTopTChanPlugin(std::string const &outDirectory, std::shared_ptr<BTagger co
         Int_t nPV;
         Float_t weight, weight_PileUpUp, weight_PileUpDown;
 	Float_t weight_TagRateUp, weight_TagRateDown, weight_MistagRateUp, weight_MistagRateDown;
+        
+        Float_t weight_xsec, weight_btag, weight_pu, weight_trig;
 };
